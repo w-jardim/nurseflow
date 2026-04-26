@@ -11,6 +11,7 @@ Primeira fatia implementada:
 - Endpoint autenticado para consultar a sessão atual
 - Base para guards, contexto de usuário e tenant por requisição
 - Telas frontend para login, cadastro e painel autenticado
+- CRUD inicial de alunos e pacientes com isolamento por tenant
 
 ## Endpoints
 
@@ -18,6 +19,10 @@ Primeira fatia implementada:
 POST /autenticacao/cadastro-profissional
 POST /autenticacao/login
 GET /autenticacao/me
+GET /alunos
+POST /alunos
+GET /pacientes
+POST /pacientes
 ```
 
 ## Rotas frontend

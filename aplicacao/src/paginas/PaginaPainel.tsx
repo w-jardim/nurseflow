@@ -1,17 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PainelContatos } from '../componentes/PainelContatos';
 import { requisitarApi } from '../servicos/api';
 import { limparToken } from '../servicos/sessao';
 import type { Usuario } from '../tipos/autenticacao';
+import type { Contato } from '../tipos/contatos';
 
 export function PaginaPainel() {
   const navegar = useNavigate();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [alunos, setAlunos] = useState<Contato[]>([]);
+  const [pacientes, setPacientes] = useState<Contato[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    requisitarApi<{ usuario: Usuario }>('/autenticacao/me', { autenticada: true })
-      .then((resposta) => setUsuario(resposta.usuario))
+    Promise.all([
+      requisitarApi<{ usuario: Usuario }>('/autenticacao/me', { autenticada: true }),
+      requisitarApi<Contato[]>('/alunos', { autenticada: true }),
+      requisitarApi<Contato[]>('/pacientes', { autenticada: true }),
+    ])
+      .then(([sessao, listaAlunos, listaPacientes]) => {
+        setUsuario(sessao.usuario);
+        setAlunos(listaAlunos);
+        setPacientes(listaPacientes);
+      })
       .catch(() => {
         limparToken();
         navegar('/autenticacao/login');
@@ -22,6 +34,28 @@ export function PaginaPainel() {
   function sair() {
     limparToken();
     navegar('/autenticacao/login');
+  }
+
+  async function criarAluno(dados: { nome: string; email: string; telefone: string }) {
+    const aluno = await requisitarApi<Contato>('/alunos', {
+      metodo: 'POST',
+      autenticada: true,
+      corpo: dados,
+    });
+    setAlunos((atuais) => [aluno, ...atuais]);
+  }
+
+  async function criarPaciente(dados: { nome: string; email: string; telefone: string }) {
+    const paciente = await requisitarApi<Contato>('/pacientes', {
+      metodo: 'POST',
+      autenticada: true,
+      corpo: {
+        nome: dados.nome,
+        email: dados.email || undefined,
+        telefone: dados.telefone || undefined,
+      },
+    });
+    setPacientes((atuais) => [paciente, ...atuais]);
   }
 
   if (carregando) {
@@ -52,13 +86,25 @@ export function PaginaPainel() {
           Sessão autenticada como {usuario?.papel}. Tenant atual: {usuario?.profissionalId}.
         </p>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {['Alunos', 'Pacientes', 'Cursos'].map((item) => (
-            <article key={item} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="font-semibold">{item}</h2>
-              <p className="mt-2 text-sm text-slate-600">Módulo preparado para a próxima fatia da Fase 1.</p>
-            </article>
-          ))}
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          <PainelContatos
+            titulo="Aluno"
+            descricao="Cadastre alunos para cursos e acompanhamento."
+            contatos={alunos}
+            emailObrigatorio
+            aoCriar={criarAluno}
+          />
+          <PainelContatos
+            titulo="Paciente"
+            descricao="Cadastre pacientes para atendimentos e agenda."
+            contatos={pacientes}
+            aoCriar={criarPaciente}
+          />
+        </div>
+
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="font-semibold">Cursos</h2>
+          <p className="mt-2 text-sm text-slate-600">Módulo preparado para a próxima fatia da Fase 1.</p>
         </div>
       </section>
     </main>

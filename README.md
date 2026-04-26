@@ -60,6 +60,10 @@ GET  /saude
 POST /autenticacao/cadastro-profissional
 POST /autenticacao/login
 GET  /autenticacao/me
+GET  /alunos
+POST /alunos
+GET  /pacientes
+POST /pacientes
 ```
 
 ## Rotas iniciais da aplicação
