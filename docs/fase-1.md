@@ -20,6 +20,7 @@ Primeira fatia implementada:
 - Página pública inicial com cursos publicados e consultorias
 - Formulário público de interesse sem criação automática de aluno ou paciente
 - Listagem de interesses recebidos no painel do profissional
+- Agenda inicial de atendimentos vinculada a pacientes do profissional
 
 ## Endpoints
 
@@ -43,6 +44,8 @@ PUT /profissionais/me
 GET /publico/profissionais/:slug
 POST /publico/profissionais/:slug/interesses
 GET /interesses
+GET /consultas
+POST /consultas
 ```
 
 ## Rotas frontend

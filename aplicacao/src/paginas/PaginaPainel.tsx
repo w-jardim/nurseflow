@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PainelConsultorias } from '../componentes/PainelConsultorias';
+import { PainelConsultas } from '../componentes/PainelConsultas';
 import { PainelConteudoCurso } from '../componentes/PainelConteudoCurso';
 import { PainelContatos } from '../componentes/PainelContatos';
 import { PainelCursos } from '../componentes/PainelCursos';
@@ -9,6 +10,7 @@ import { PainelPerfilProfissional } from '../componentes/PainelPerfilProfissiona
 import { requisitarApi } from '../servicos/api';
 import { limparToken } from '../servicos/sessao';
 import type { Usuario } from '../tipos/autenticacao';
+import type { Consulta, StatusConsulta } from '../tipos/consultas';
 import type { Contato } from '../tipos/contatos';
 import type { Consultoria, ModalidadeConsultoria } from '../tipos/consultorias';
 import type { Curso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
@@ -20,6 +22,7 @@ export function PaginaPainel() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [alunos, setAlunos] = useState<Contato[]>([]);
   const [pacientes, setPacientes] = useState<Contato[]>([]);
+  const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [consultorias, setConsultorias] = useState<Consultoria[]>([]);
   const [interesses, setInteresses] = useState<InteressePublico[]>([]);
@@ -31,6 +34,7 @@ export function PaginaPainel() {
       requisitarApi<{ usuario: Usuario }>('/autenticacao/me', { autenticada: true }),
       requisitarApi<Contato[]>('/alunos', { autenticada: true }),
       requisitarApi<Contato[]>('/pacientes', { autenticada: true }),
+      requisitarApi<Consulta[]>('/consultas', { autenticada: true }),
       requisitarApi<Curso[]>('/cursos', { autenticada: true }),
       requisitarApi<Consultoria[]>('/consultorias', { autenticada: true }),
       requisitarApi<PerfilProfissional>('/profissionais/me', { autenticada: true }),
@@ -41,6 +45,7 @@ export function PaginaPainel() {
           sessao,
           listaAlunos,
           listaPacientes,
+          listaConsultas,
           listaCursos,
           listaConsultorias,
           perfilProfissional,
@@ -49,6 +54,7 @@ export function PaginaPainel() {
         setUsuario(sessao.usuario);
         setAlunos(listaAlunos);
         setPacientes(listaPacientes);
+        setConsultas(listaConsultas);
         setCursos(listaCursos);
         setConsultorias(listaConsultorias);
         setPerfil(perfilProfissional);
@@ -175,6 +181,27 @@ export function PaginaPainel() {
     setCursos((atuais) => [curso, ...atuais]);
   }
 
+  async function criarConsulta(dados: {
+    pacienteId: string;
+    inicioEm: string;
+    fimEm: string;
+    status: StatusConsulta;
+    observacoes: string;
+  }) {
+    const consulta = await requisitarApi<Consulta>('/consultas', {
+      metodo: 'POST',
+      autenticada: true,
+      corpo: {
+        pacienteId: dados.pacienteId,
+        inicioEm: dados.inicioEm,
+        fimEm: dados.fimEm,
+        status: dados.status,
+        observacoes: dados.observacoes || undefined,
+      },
+    });
+    setConsultas((atuais) => [...atuais, consulta].sort((a, b) => a.inicioEm.localeCompare(b.inicioEm)));
+  }
+
   async function criarConsultoria(dados: {
     titulo: string;
     descricao: string;
@@ -249,6 +276,10 @@ export function PaginaPainel() {
 
         <div className="mt-4">
           <PainelConteudoCurso cursos={cursos} />
+        </div>
+
+        <div className="mt-4">
+          <PainelConsultas pacientes={pacientes} consultas={consultas} aoCriar={criarConsulta} />
         </div>
 
         <div className="mt-4">

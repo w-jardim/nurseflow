@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModulo } from './app.modulo';
+import { HttpExcecaoFiltro } from './comum/filtros/http-excecao.filtro';
 import { criarErroValidacao } from './comum/validacao/mensagens-validacao';
 
 async function bootstrap() {
@@ -22,6 +23,7 @@ async function bootstrap() {
       exceptionFactory: criarErroValidacao,
     }),
   );
+  app.useGlobalFilters(new HttpExcecaoFiltro());
 
   await app.listen(porta);
 }

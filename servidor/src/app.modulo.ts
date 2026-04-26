@@ -7,6 +7,7 @@ import { TenantInterceptor } from './comum/interceptadores/tenant.interceptor';
 import { AlunosModulo } from './modulos/alunos/alunos.modulo';
 import { AutenticacaoModulo } from './modulos/autenticacao/autenticacao.modulo';
 import { ConsultoriasModulo } from './modulos/consultorias/consultorias.modulo';
+import { ConsultasModulo } from './modulos/consultas/consultas.modulo';
 import { CursosModulo } from './modulos/cursos/cursos.modulo';
 import { InteressesModulo } from './modulos/interesses/interesses.modulo';
 import { PacientesModulo } from './modulos/pacientes/pacientes.modulo';
@@ -23,6 +24,7 @@ import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modul
     PacientesModulo,
     CursosModulo,
     ConsultoriasModulo,
+    ConsultasModulo,
     ProfissionaisModulo,
     InteressesModulo,
   ],

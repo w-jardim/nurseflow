@@ -22,6 +22,7 @@ const ROTULOS_CAMPOS: Record<string, string> = {
   nome: 'Nome',
   nomePublico: 'Nome público',
   numero: 'Número',
+  observacoes: 'Observações',
   origem: 'Origem',
   pacienteId: 'Paciente',
   precoCentavos: 'Preço',
@@ -49,6 +50,7 @@ function traduzirRestricao(campo: string, tipo: string, mensagemOriginal?: strin
   const mensagens: Record<string, string> = {
     isEmail: `${rotulo} deve ser um e-mail válido.`,
     isEnum: `${rotulo} possui uma opção inválida.`,
+    isDateString: `${rotulo} deve ser uma data e hora válida.`,
     isInt: `${rotulo} deve ser um número inteiro.`,
     isString: `${rotulo} deve ser um texto válido.`,
     isUUID: `${rotulo} deve ter um identificador válido.`,
