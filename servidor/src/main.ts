@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModulo } from './app.modulo';
+import { criarErroValidacao } from './comum/validacao/mensagens-validacao';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModulo);
@@ -18,6 +19,7 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
+      exceptionFactory: criarErroValidacao,
     }),
   );
 
