@@ -33,6 +33,11 @@ enum StatusCurso {
   ARQUIVADO
 }
 
+enum ModalidadeCurso {
+  ONLINE
+  PRESENCIAL
+}
+
 enum StatusConsulta {
   AGENDADA
   CONFIRMADA
@@ -45,6 +50,17 @@ enum StatusPagamento {
   APROVADO
   RECUSADO
   ESTORNADO
+}
+
+enum StatusConsultoria {
+  AGENDADA
+  CONCLUIDA
+  CANCELADA
+}
+
+enum ModalidadeConsultoria {
+  ONLINE
+  PRESENCIAL
 }
 
 model Usuario {
@@ -92,6 +108,7 @@ model Profissional {
   pacientes          Paciente[]
   cursos             Curso[]
   consultas          Consulta[]
+  consultorias       Consultoria[]
   assinaturas        Assinatura[]
   transacoes         Transacao[]
   configuracaoPagina ConfiguracaoPagina?
@@ -116,6 +133,7 @@ model Aluno {
   profissional   Profissional    @relation(fields: [profissionalId], references: [id])
   usuario        Usuario?        @relation(fields: [usuarioId], references: [id])
   inscricoes     InscricaoCurso[]
+  consultorias   Consultoria[]
 
   @@unique([profissionalId, email])
   @@unique([profissionalId, cpf])
@@ -146,6 +164,7 @@ model Paciente {
   profissional   Profissional @relation(fields: [profissionalId], references: [id])
   usuario        Usuario?     @relation(fields: [usuarioId], references: [id])
   consultas      Consulta[]
+  consultorias   Consultoria[]
 
   @@index([profissionalId, nome])
   @@unique([profissionalId, cpf])
@@ -158,6 +177,7 @@ model Curso {
   titulo         String           @db.VarChar(160)
   slug           String           @db.VarChar(100)
   descricao      String?
+  modalidade     ModalidadeCurso  @default(ONLINE)
   precoCentavos  Int              @default(0) @map("preco_centavos")
   status         StatusCurso      @default(RASCUNHO)
   publicadoEm    DateTime?        @map("publicado_em")
@@ -256,6 +276,32 @@ model Consulta {
 
   @@index([profissionalId, inicioEm])
   @@map("consultas")
+}
+
+model Consultoria {
+  id             String                @id @default(uuid()) @db.Uuid
+  profissionalId String                @map("profissional_id") @db.Uuid
+  alunoId        String?               @map("aluno_id") @db.Uuid
+  pacienteId     String?               @map("paciente_id") @db.Uuid
+  titulo         String                @db.VarChar(160)
+  descricao      String?
+  modalidade     ModalidadeConsultoria @default(ONLINE)
+  status         StatusConsultoria     @default(AGENDADA)
+  inicioEm       DateTime?             @map("inicio_em")
+  fimEm          DateTime?             @map("fim_em")
+  local          String?               @db.VarChar(160)
+  linkOnline     String?               @map("link_online") @db.VarChar(255)
+  criadoEm       DateTime              @default(now()) @map("criado_em")
+  atualizadoEm   DateTime              @updatedAt @map("atualizado_em")
+
+  profissional   Profissional          @relation(fields: [profissionalId], references: [id])
+  aluno          Aluno?                @relation(fields: [alunoId], references: [id])
+  paciente       Paciente?             @relation(fields: [pacienteId], references: [id])
+
+  @@index([profissionalId, status, inicioEm])
+  @@index([alunoId])
+  @@index([pacienteId])
+  @@map("consultorias")
 }
 
 model Assinatura {

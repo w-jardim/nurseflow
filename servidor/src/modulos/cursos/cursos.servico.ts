@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, StatusCurso } from '@prisma/client';
+import { ModalidadeCurso, Prisma, StatusCurso } from '@prisma/client';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
 import { CriarAulaCursoDto } from './dto/criar-aula-curso.dto';
 import { CriarCursoDto } from './dto/criar-curso.dto';
@@ -10,6 +10,7 @@ const CURSO_SELECT = {
   titulo: true,
   slug: true,
   descricao: true,
+  modalidade: true,
   precoCentavos: true,
   status: true,
   publicadoEm: true,
@@ -47,6 +48,7 @@ export class CursosServico {
           titulo: dados.titulo.trim(),
           slug: dados.slug.trim().toLowerCase(),
           descricao: dados.descricao?.trim() || null,
+          modalidade: dados.modalidade ?? ModalidadeCurso.ONLINE,
           precoCentavos: dados.precoCentavos,
           status,
           publicadoEm: status === StatusCurso.PUBLICADO ? new Date() : null,

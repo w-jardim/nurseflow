@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
-import { StatusCurso } from '@prisma/client';
+import { ModalidadeCurso, StatusCurso } from '@prisma/client';
 
 export class CriarCursoDto {
   @IsString()
@@ -17,6 +17,10 @@ export class CriarCursoDto {
   @IsString()
   @MaxLength(2000)
   descricao?: string;
+
+  @IsOptional()
+  @IsEnum(ModalidadeCurso)
+  modalidade?: ModalidadeCurso;
 
   @IsInt()
   @Min(0)

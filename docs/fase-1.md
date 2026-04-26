@@ -14,6 +14,7 @@ Primeira fatia implementada:
 - CRUD inicial de alunos e pacientes com isolamento por tenant
 - CRUD inicial de cursos com isolamento por tenant
 - Estrutura inicial de cursos com módulos e aulas
+- Modalidade de curso e base de consultorias para alunos e pacientes
 
 ## Endpoints
 
@@ -30,6 +31,8 @@ POST /cursos
 GET /cursos/:cursoId/modulos
 POST /cursos/:cursoId/modulos
 POST /cursos/:cursoId/modulos/:moduloId/aulas
+GET /consultorias
+POST /consultorias
 ```
 
 ## Rotas frontend

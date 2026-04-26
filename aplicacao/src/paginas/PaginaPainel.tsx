@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PainelConsultorias } from '../componentes/PainelConsultorias';
 import { PainelConteudoCurso } from '../componentes/PainelConteudoCurso';
 import { PainelContatos } from '../componentes/PainelContatos';
 import { PainelCursos } from '../componentes/PainelCursos';
@@ -7,7 +8,8 @@ import { requisitarApi } from '../servicos/api';
 import { limparToken } from '../servicos/sessao';
 import type { Usuario } from '../tipos/autenticacao';
 import type { Contato } from '../tipos/contatos';
-import type { Curso, StatusCurso } from '../tipos/cursos';
+import type { Consultoria, ModalidadeConsultoria } from '../tipos/consultorias';
+import type { Curso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
 
 export function PaginaPainel() {
   const navegar = useNavigate();
@@ -15,6 +17,7 @@ export function PaginaPainel() {
   const [alunos, setAlunos] = useState<Contato[]>([]);
   const [pacientes, setPacientes] = useState<Contato[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
+  const [consultorias, setConsultorias] = useState<Consultoria[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -23,12 +26,14 @@ export function PaginaPainel() {
       requisitarApi<Contato[]>('/alunos', { autenticada: true }),
       requisitarApi<Contato[]>('/pacientes', { autenticada: true }),
       requisitarApi<Curso[]>('/cursos', { autenticada: true }),
+      requisitarApi<Consultoria[]>('/consultorias', { autenticada: true }),
     ])
-      .then(([sessao, listaAlunos, listaPacientes, listaCursos]) => {
+      .then(([sessao, listaAlunos, listaPacientes, listaCursos, listaConsultorias]) => {
         setUsuario(sessao.usuario);
         setAlunos(listaAlunos);
         setPacientes(listaPacientes);
         setCursos(listaCursos);
+        setConsultorias(listaConsultorias);
       })
       .catch(() => {
         limparToken();
@@ -109,6 +114,7 @@ export function PaginaPainel() {
     titulo: string;
     slug: string;
     descricao: string;
+    modalidade: ModalidadeCurso;
     precoCentavos: number;
     status: StatusCurso;
   }) {
@@ -119,11 +125,42 @@ export function PaginaPainel() {
         titulo: dados.titulo,
         slug: dados.slug,
         descricao: dados.descricao || undefined,
+        modalidade: dados.modalidade,
         precoCentavos: dados.precoCentavos,
         status: dados.status,
       },
     });
     setCursos((atuais) => [curso, ...atuais]);
+  }
+
+  async function criarConsultoria(dados: {
+    titulo: string;
+    descricao: string;
+    modalidade: ModalidadeConsultoria;
+    publico: 'ALUNO' | 'PACIENTE';
+    alunoId: string;
+    pacienteId: string;
+    inicioEm: string;
+    fimEm: string;
+    local: string;
+    linkOnline: string;
+  }) {
+    const consultoria = await requisitarApi<Consultoria>('/consultorias', {
+      metodo: 'POST',
+      autenticada: true,
+      corpo: {
+        titulo: dados.titulo,
+        descricao: dados.descricao || undefined,
+        modalidade: dados.modalidade,
+        alunoId: dados.publico === 'ALUNO' ? dados.alunoId : undefined,
+        pacienteId: dados.publico === 'PACIENTE' ? dados.pacienteId : undefined,
+        inicioEm: dados.inicioEm || undefined,
+        fimEm: dados.fimEm || undefined,
+        local: dados.local || undefined,
+        linkOnline: dados.linkOnline || undefined,
+      },
+    });
+    setConsultorias((atuais) => [consultoria, ...atuais]);
   }
 
   if (carregando) {
@@ -177,6 +214,15 @@ export function PaginaPainel() {
 
         <div className="mt-4">
           <PainelConteudoCurso cursos={cursos} />
+        </div>
+
+        <div className="mt-4">
+          <PainelConsultorias
+            alunos={alunos}
+            pacientes={pacientes}
+            consultorias={consultorias}
+            aoCriar={criarConsultoria}
+          />
         </div>
       </section>
     </main>

@@ -1,10 +1,12 @@
 export type StatusCurso = 'RASCUNHO' | 'PUBLICADO' | 'ARQUIVADO';
+export type ModalidadeCurso = 'ONLINE' | 'PRESENCIAL';
 
 export type Curso = {
   id: string;
   titulo: string;
   slug: string;
   descricao: string | null;
+  modalidade: ModalidadeCurso;
   precoCentavos: number;
   status: StatusCurso;
   publicadoEm: string | null;

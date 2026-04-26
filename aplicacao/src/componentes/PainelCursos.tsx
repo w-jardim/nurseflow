@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { CampoTexto } from './CampoTexto';
-import type { Curso, StatusCurso } from '../tipos/cursos';
+import type { Curso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
 import { formatarReais, mascararReais, reaisParaCentavos } from '../utilitarios/moeda';
 
 const PRECO_MAXIMO_CENTAVOS = 100000000;
@@ -11,6 +11,7 @@ type PainelCursosProps = {
     titulo: string;
     slug: string;
     descricao: string;
+    modalidade: ModalidadeCurso;
     precoCentavos: number;
     status: StatusCurso;
   }) => Promise<void>;
@@ -30,6 +31,7 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
   const [titulo, setTitulo] = useState('');
   const [slug, setSlug] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [modalidade, setModalidade] = useState<ModalidadeCurso>('ONLINE');
   const [preco, setPreco] = useState('');
   const [status, setStatus] = useState<StatusCurso>('RASCUNHO');
   const [erro, setErro] = useState('');
@@ -52,12 +54,14 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
         titulo,
         slug,
         descricao,
+        modalidade,
         precoCentavos,
         status,
       });
       setTitulo('');
       setSlug('');
       setDescricao('');
+      setModalidade('ONLINE');
       setPreco('');
       setStatus('RASCUNHO');
     } catch (error) {
@@ -103,7 +107,18 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
             maxLength={2000}
           />
         </label>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="block">
+            <span className="text-sm font-medium text-slate-800">Modalidade</span>
+            <select
+              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
+              value={modalidade}
+              onChange={(evento) => setModalidade(evento.target.value as ModalidadeCurso)}
+            >
+              <option value="ONLINE">Online</option>
+              <option value="PRESENCIAL">Presencial</option>
+            </select>
+          </label>
           <CampoTexto
             rotulo="Preço"
             name="curso-preco"
@@ -153,6 +168,9 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
                     {curso.status === 'PUBLICADO' ? 'Publicado' : 'Rascunho'}
                   </span>
                 </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  {curso.modalidade === 'ONLINE' ? 'Curso online' : 'Curso presencial'}
+                </p>
                 <p className="mt-2 text-sm text-slate-700">{formatarReais(curso.precoCentavos)}</p>
                 {curso.descricao ? <p className="mt-1 text-sm text-slate-600">{curso.descricao}</p> : null}
               </li>
