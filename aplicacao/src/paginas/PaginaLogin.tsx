@@ -24,7 +24,7 @@ export function PaginaLogin() {
       });
 
       salvarToken(resposta.acesso.token);
-      navegar('/painel');
+      navegar(resposta.usuario.papel === 'SUPER_ADMIN' ? '/admin' : '/painel');
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Não foi possível entrar.');
     } finally {

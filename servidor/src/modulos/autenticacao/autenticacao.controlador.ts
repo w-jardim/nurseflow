@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { UsuarioAtual } from '../../comum/decoradores/usuario-atual.decorador';
 import { JwtAuthGuarda } from '../../comum/guardas/jwt-auth.guarda';
 import type { UsuarioAutenticado } from '../../comum/tipos/requisicao-autenticada';
@@ -11,11 +12,13 @@ export class AutenticacaoControlador {
   constructor(private readonly autenticacaoServico: AutenticacaoServico) {}
 
   @Post('cadastro-profissional')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   cadastrarProfissional(@Body() dados: CadastroProfissionalDto) {
     return this.autenticacaoServico.cadastrarProfissional(dados);
   }
 
   @Post('login')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   entrar(@Body() dados: LoginDto) {
     return this.autenticacaoServico.entrar(dados);
   }

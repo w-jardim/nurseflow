@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppControlador } from './app.controlador';
 import { PrismaModulo } from './comum/prisma/prisma.modulo';
 import { TenantInterceptor } from './comum/interceptadores/tenant.interceptor';
+import { AdminModulo } from './modulos/admin/admin.modulo';
 import { AlunosModulo } from './modulos/alunos/alunos.modulo';
 import { AuditoriaModulo } from './modulos/auditoria/auditoria.modulo';
 import { AutenticacaoModulo } from './modulos/autenticacao/autenticacao.modulo';
@@ -12,6 +14,7 @@ import { ConsultasModulo } from './modulos/consultas/consultas.modulo';
 import { CursosModulo } from './modulos/cursos/cursos.modulo';
 import { InteressesModulo } from './modulos/interesses/interesses.modulo';
 import { PacientesModulo } from './modulos/pacientes/pacientes.modulo';
+import { PagamentosModulo } from './modulos/pagamentos/pagamentos.modulo';
 import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modulo';
 
 @Module({
@@ -19,6 +22,9 @@ import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modul
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: 60000, limit: 100 },
+    ]),
     PrismaModulo,
     AuditoriaModulo,
     AutenticacaoModulo,
@@ -29,9 +35,15 @@ import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modul
     ConsultasModulo,
     ProfissionaisModulo,
     InteressesModulo,
+    PagamentosModulo,
+    AdminModulo,
   ],
   controllers: [AppControlador],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: TenantInterceptor,
