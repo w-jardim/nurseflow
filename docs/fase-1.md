@@ -14,7 +14,10 @@ Primeira fatia implementada:
 - CRUD inicial de alunos e pacientes com isolamento por tenant
 - CRUD inicial de cursos com isolamento por tenant
 - Estrutura inicial de cursos com módulos e aulas
-- Modalidade de curso e base de consultorias para alunos e pacientes
+- Modalidade de curso
+- Consultorias como produtos avulsos, separadas de cursos e sem vínculo obrigatório com alunos ou pacientes
+- Perfil público do profissional
+- Página pública inicial com cursos publicados e consultorias
 
 ## Endpoints
 
@@ -33,6 +36,9 @@ POST /cursos/:cursoId/modulos
 POST /cursos/:cursoId/modulos/:moduloId/aulas
 GET /consultorias
 POST /consultorias
+GET /profissionais/me
+PUT /profissionais/me
+GET /publico/profissionais/:slug
 ```
 
 ## Rotas frontend
@@ -41,6 +47,7 @@ POST /consultorias
 /autenticacao/login
 /autenticacao/cadastro
 /painel
+/:slug
 ```
 
 ## Proximas fatias
@@ -48,4 +55,5 @@ POST /consultorias
 - Refresh token persistido em Redis
 - 2FA para Super Admin
 - Decorador de papéis e RBAC em rotas
-- CRUD de alunos e pacientes filtrado por `profissionalId`
+- Recuperação de senha
+- Trilha de auditoria

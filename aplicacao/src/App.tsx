@@ -4,6 +4,7 @@ import { PaginaCadastro } from './paginas/PaginaCadastro';
 import { PaginaInicial } from './paginas/PaginaInicial';
 import { PaginaLogin } from './paginas/PaginaLogin';
 import { PaginaPainel } from './paginas/PaginaPainel';
+import { PaginaPublicaProfissional } from './paginas/PaginaPublicaProfissional';
 
 export function App() {
   return (
@@ -14,6 +15,7 @@ export function App() {
         <Route path="/autenticacao/cadastro" element={<PaginaCadastro />} />
       </Route>
       <Route path="/painel" element={<PaginaPainel />} />
+      <Route path="/:slug" element={<PaginaPublicaProfissional />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

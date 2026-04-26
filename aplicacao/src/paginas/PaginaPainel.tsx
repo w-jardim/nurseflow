@@ -4,12 +4,14 @@ import { PainelConsultorias } from '../componentes/PainelConsultorias';
 import { PainelConteudoCurso } from '../componentes/PainelConteudoCurso';
 import { PainelContatos } from '../componentes/PainelContatos';
 import { PainelCursos } from '../componentes/PainelCursos';
+import { PainelPerfilProfissional } from '../componentes/PainelPerfilProfissional';
 import { requisitarApi } from '../servicos/api';
 import { limparToken } from '../servicos/sessao';
 import type { Usuario } from '../tipos/autenticacao';
 import type { Contato } from '../tipos/contatos';
 import type { Consultoria, ModalidadeConsultoria } from '../tipos/consultorias';
 import type { Curso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
+import type { PerfilProfissional } from '../tipos/profissionais';
 
 export function PaginaPainel() {
   const navegar = useNavigate();
@@ -18,6 +20,7 @@ export function PaginaPainel() {
   const [pacientes, setPacientes] = useState<Contato[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [consultorias, setConsultorias] = useState<Consultoria[]>([]);
+  const [perfil, setPerfil] = useState<PerfilProfissional | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -27,13 +30,15 @@ export function PaginaPainel() {
       requisitarApi<Contato[]>('/pacientes', { autenticada: true }),
       requisitarApi<Curso[]>('/cursos', { autenticada: true }),
       requisitarApi<Consultoria[]>('/consultorias', { autenticada: true }),
+      requisitarApi<PerfilProfissional>('/profissionais/me', { autenticada: true }),
     ])
-      .then(([sessao, listaAlunos, listaPacientes, listaCursos, listaConsultorias]) => {
+      .then(([sessao, listaAlunos, listaPacientes, listaCursos, listaConsultorias, perfilProfissional]) => {
         setUsuario(sessao.usuario);
         setAlunos(listaAlunos);
         setPacientes(listaPacientes);
         setCursos(listaCursos);
         setConsultorias(listaConsultorias);
+        setPerfil(perfilProfissional);
       })
       .catch(() => {
         limparToken();
@@ -73,6 +78,28 @@ export function PaginaPainel() {
       },
     });
     setAlunos((atuais) => [aluno, ...atuais]);
+  }
+
+  async function salvarPerfil(dados: {
+    nomePublico: string;
+    slug: string;
+    bio: string;
+    telefone: string;
+    conselho: string;
+  }) {
+    const perfilAtualizado = await requisitarApi<PerfilProfissional>('/profissionais/me', {
+      metodo: 'PUT',
+      autenticada: true,
+      corpo: {
+        nomePublico: dados.nomePublico,
+        slug: dados.slug,
+        bio: dados.bio || undefined,
+        telefone: dados.telefone || undefined,
+        conselho: dados.conselho || undefined,
+      },
+    });
+
+    setPerfil(perfilAtualizado);
   }
 
   async function criarPaciente(dados: {
@@ -179,6 +206,10 @@ export function PaginaPainel() {
         <p className="mt-2 text-slate-700">
           Sessão autenticada como {usuario?.papel}. Tenant atual: {usuario?.profissionalId}.
         </p>
+
+        <div className="mt-8">
+          <PainelPerfilProfissional perfil={perfil} aoSalvar={salvarPerfil} />
+        </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <PainelContatos
