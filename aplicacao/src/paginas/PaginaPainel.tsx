@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PainelAuditoria } from '../componentes/PainelAuditoria';
 import { PainelConsultorias } from '../componentes/PainelConsultorias';
 import { PainelConsultas } from '../componentes/PainelConsultas';
 import { PainelConteudoCurso } from '../componentes/PainelConteudoCurso';
@@ -9,6 +10,7 @@ import { PainelInteresses } from '../componentes/PainelInteresses';
 import { PainelPerfilProfissional } from '../componentes/PainelPerfilProfissional';
 import { requisitarApi } from '../servicos/api';
 import { limparToken } from '../servicos/sessao';
+import type { LogAuditoria } from '../tipos/auditoria';
 import type { Usuario } from '../tipos/autenticacao';
 import type { Consulta, StatusConsulta } from '../tipos/consultas';
 import type { Contato } from '../tipos/contatos';
@@ -27,6 +29,7 @@ export function PaginaPainel() {
   const [consultorias, setConsultorias] = useState<Consultoria[]>([]);
   const [interesses, setInteresses] = useState<InteressePublico[]>([]);
   const [perfil, setPerfil] = useState<PerfilProfissional | null>(null);
+  const [logsAuditoria, setLogsAuditoria] = useState<LogAuditoria[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export function PaginaPainel() {
       requisitarApi<Consultoria[]>('/consultorias', { autenticada: true }),
       requisitarApi<PerfilProfissional>('/profissionais/me', { autenticada: true }),
       requisitarApi<InteressePublico[]>('/interesses', { autenticada: true }),
+      requisitarApi<LogAuditoria[]>('/auditoria', { autenticada: true }),
     ])
       .then(
         ([
@@ -50,6 +54,7 @@ export function PaginaPainel() {
           listaConsultorias,
           perfilProfissional,
           listaInteresses,
+          listaAuditoria,
         ]) => {
         setUsuario(sessao.usuario);
         setAlunos(listaAlunos);
@@ -59,6 +64,7 @@ export function PaginaPainel() {
         setConsultorias(listaConsultorias);
         setPerfil(perfilProfissional);
         setInteresses(listaInteresses);
+        setLogsAuditoria(listaAuditoria);
         },
       )
       .catch(() => {
@@ -99,6 +105,7 @@ export function PaginaPainel() {
       },
     });
     setAlunos((atuais) => [aluno, ...atuais]);
+    await carregarAuditoria();
   }
 
   async function salvarPerfil(dados: {
@@ -121,6 +128,7 @@ export function PaginaPainel() {
     });
 
     setPerfil(perfilAtualizado);
+    await carregarAuditoria();
   }
 
   async function criarPaciente(dados: {
@@ -156,6 +164,7 @@ export function PaginaPainel() {
       },
     });
     setPacientes((atuais) => [paciente, ...atuais]);
+    await carregarAuditoria();
   }
 
   async function criarCurso(dados: {
@@ -179,6 +188,7 @@ export function PaginaPainel() {
       },
     });
     setCursos((atuais) => [curso, ...atuais]);
+    await carregarAuditoria();
   }
 
   async function criarConsulta(dados: {
@@ -200,6 +210,7 @@ export function PaginaPainel() {
       },
     });
     setConsultas((atuais) => [...atuais, consulta].sort((a, b) => a.inicioEm.localeCompare(b.inicioEm)));
+    await carregarAuditoria();
   }
 
   async function criarConsultoria(dados: {
@@ -219,6 +230,12 @@ export function PaginaPainel() {
       },
     });
     setConsultorias((atuais) => [consultoria, ...atuais]);
+    await carregarAuditoria();
+  }
+
+  async function carregarAuditoria() {
+    const logs = await requisitarApi<LogAuditoria[]>('/auditoria', { autenticada: true });
+    setLogsAuditoria(logs);
   }
 
   if (carregando) {
@@ -288,6 +305,10 @@ export function PaginaPainel() {
 
         <div className="mt-4">
           <PainelInteresses interesses={interesses} />
+        </div>
+
+        <div className="mt-4">
+          <PainelAuditoria logs={logsAuditoria} />
         </div>
       </section>
     </main>

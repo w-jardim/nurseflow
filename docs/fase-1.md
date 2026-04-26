@@ -21,6 +21,7 @@ Primeira fatia implementada:
 - Formulário público de interesse sem criação automática de aluno ou paciente
 - Listagem de interesses recebidos no painel do profissional
 - Agenda inicial de atendimentos vinculada a pacientes do profissional
+- Trilha de auditoria básica para ações do profissional
 
 ## Endpoints
 
@@ -46,6 +47,7 @@ POST /publico/profissionais/:slug/interesses
 GET /interesses
 GET /consultas
 POST /consultas
+GET /auditoria
 ```
 
 ## Rotas frontend
@@ -63,4 +65,4 @@ POST /consultas
 - 2FA para Super Admin
 - Decorador de papéis e RBAC em rotas
 - Recuperação de senha
-- Trilha de auditoria
+- Melhorias de auditoria com filtros e detalhes de segurança
