@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PlanoProfissional, StatusAssinatura, StatusPagamento } from '@prisma/client';
-import MercadoPagoConfig, { Payment, PreApproval, Preference } from 'mercadopago';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
 
 const VALORES_PLANO: Record<PlanoProfissional, number> = {
@@ -16,19 +15,30 @@ const VALORES_PLANO: Record<PlanoProfissional, number> = {
 };
 
 const TAXA_PLATAFORMA = 0.05;
+const MERCADO_PAGO_API = 'https://api.mercadopago.com';
+
+type MercadoPagoAssinatura = {
+  id?: string;
+  init_point?: string;
+  status?: string;
+};
+
+type MercadoPagoPreferencia = {
+  id?: string;
+  init_point?: string;
+};
+
+type MercadoPagoPagamento = {
+  external_reference?: string;
+  status?: string;
+};
 
 @Injectable()
 export class PagamentosServico {
-  private readonly mp: MercadoPagoConfig;
-
   constructor(
     private readonly prisma: PrismaServico,
     private readonly config: ConfigService,
-  ) {
-    this.mp = new MercadoPagoConfig({
-      accessToken: this.config.get<string>('MERCADO_PAGO_ACCESS_TOKEN', ''),
-    });
-  }
+  ) {}
 
   async criarAssinatura(profissionalId: string, plano: PlanoProfissional) {
     if (plano === 'GRATUITO') {
@@ -43,11 +53,12 @@ export class PagamentosServico {
 
     if (!profissional) throw new NotFoundException('Profissional não encontrado.');
 
-    const preApproval = new PreApproval(this.mp);
     const valorCentavos = VALORES_PLANO[plano];
 
-    const resultado = await preApproval.create({
-      body: {
+    const resultado = await this.requisitarMercadoPago<MercadoPagoAssinatura>(
+      '/preapproval',
+      {
+        method: 'POST',
         reason: `NurseFlow - Plano ${plano}`,
         auto_recurring: {
           frequency: 1,
@@ -59,7 +70,7 @@ export class PagamentosServico {
         back_url: `${this.config.get('APLICACAO_URL', 'http://localhost:5173')}/painel/assinatura`,
         status: 'pending',
       },
-    });
+    );
 
     await this.prisma.assinatura.create({
       data: {
@@ -112,11 +123,12 @@ export class PagamentosServico {
       },
     });
 
-    const preference = new Preference(this.mp);
     const baseUrl = this.config.get('APLICACAO_URL', 'http://localhost:5173');
 
-    const resultado = await preference.create({
-      body: {
+    const resultado = await this.requisitarMercadoPago<MercadoPagoPreferencia>(
+      '/checkout/preferences',
+      {
+        method: 'POST',
         items: [
           {
             id: cursoId,
@@ -138,7 +150,7 @@ export class PagamentosServico {
         },
         auto_return: 'approved',
       },
-    });
+    );
 
     await this.prisma.transacao.update({
       where: { id: transacao.id },
@@ -157,8 +169,9 @@ export class PagamentosServico {
   }
 
   private async processarPagamento(pagamentoId: string) {
-    const payment = new Payment(this.mp);
-    const pagamento = await payment.get({ id: pagamentoId });
+    const pagamento = await this.requisitarMercadoPago<MercadoPagoPagamento>(
+      `/v1/payments/${pagamentoId}`,
+    );
 
     const transacaoId = pagamento.external_reference;
     if (!transacaoId) return;
@@ -184,8 +197,9 @@ export class PagamentosServico {
   }
 
   private async processarAssinatura(preApprovalId: string) {
-    const preApproval = new PreApproval(this.mp);
-    const assinatura = await preApproval.get({ id: preApprovalId });
+    const assinatura = await this.requisitarMercadoPago<MercadoPagoAssinatura>(
+      `/preapproval/${preApprovalId}`,
+    );
 
     const registro = await this.prisma.assinatura.findFirst({
       where: { mercadoPagoReferencia: preApprovalId },
@@ -237,6 +251,29 @@ export class PagamentosServico {
     if (!this.config.get<string>('MERCADO_PAGO_ACCESS_TOKEN')) {
       throw new ServiceUnavailableException('Mercado Pago não configurado.');
     }
+  }
+
+  private async requisitarMercadoPago<T>(
+    caminho: string,
+    opcoes?: { method?: 'GET' | 'POST'; [chave: string]: unknown },
+  ): Promise<T> {
+    this.validarMercadoPagoConfigurado();
+
+    const { method = 'GET', ...body } = opcoes ?? {};
+    const resposta = await fetch(`${MERCADO_PAGO_API}${caminho}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${this.config.get<string>('MERCADO_PAGO_ACCESS_TOKEN')}`,
+        'Content-Type': 'application/json',
+      },
+      body: method === 'GET' ? undefined : JSON.stringify(body),
+    });
+
+    if (!resposta.ok) {
+      throw new ServiceUnavailableException('Mercado Pago indisponível no momento.');
+    }
+
+    return resposta.json() as Promise<T>;
   }
 
   async buscarAssinatura(profissionalId: string) {

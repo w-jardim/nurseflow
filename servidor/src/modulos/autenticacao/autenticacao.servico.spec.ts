@@ -1,210 +1,166 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AutenticacaoServico } from './autenticacao.servico';
+import { PapelUsuario, Prisma } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
+import { AutenticacaoServico } from './autenticacao.servico';
+
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(),
+  compare: jest.fn(),
+}));
 
 describe('AutenticacaoServico', () => {
   let servico: AutenticacaoServico;
-  let prismaServico: PrismaServico;
-  let jwtServico: JwtService;
 
-  const mockedPrismaServico = {
+  const prismaServico = {
+    $transaction: jest.fn(),
     usuario: {
-      create: jest.fn(),
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       update: jest.fn(),
     },
-    profissional: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-    },
   };
 
-  const mockedJwtServico = {
+  const jwtServico = {
     sign: jest.fn(),
-    verify: jest.fn(),
   };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AutenticacaoServico,
-        {
-          provide: PrismaServico,
-          useValue: mockedPrismaServico,
-        },
-        {
-          provide: JwtService,
-          useValue: mockedJwtServico,
-        },
-      ],
-    }).compile();
+  const usuarioSeguro = {
+    id: 'usuario-id',
+    nome: 'Monique Silva',
+    email: 'monique@example.com',
+    papel: PapelUsuario.PROFISSIONAL,
+    profissionalId: 'profissional-id',
+    ativo: true,
+    criadoEm: new Date('2026-01-01T00:00:00.000Z'),
+  };
 
-    servico = module.get<AutenticacaoServico>(AutenticacaoServico);
-    prismaServico = module.get<PrismaServico>(PrismaServico);
-    jwtServico = module.get<JwtService>(JwtService);
+  beforeEach(() => {
+    servico = new AutenticacaoServico(
+      prismaServico as unknown as PrismaServico,
+      jwtServico as unknown as JwtService,
+    );
+    jest.clearAllMocks();
+    jest.mocked(bcrypt.hash).mockResolvedValue('senha-hash' as never);
+    jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
+    jwtServico.sign.mockReturnValue('token-jwt');
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('cadastroProfissional', () => {
-    it('deve registrar um novo profissional com sucesso', async () => {
-      const dadosCadastro = {
+  it('cadastra profissional e cria configuração inicial em transação', async () => {
+    const profissional = {
+      id: 'profissional-id',
+      usuarioDonoId: 'usuario-id',
+      nomePublico: 'Monique Silva',
+      slug: 'monique',
+    };
+    const transacao = {
+      usuario: {
+        create: jest.fn().mockResolvedValue({ ...usuarioSeguro, profissionalId: null }),
+        update: jest.fn().mockResolvedValue(usuarioSeguro),
+      },
+      profissional: {
+        create: jest.fn().mockResolvedValue(profissional),
+      },
+      configuracaoPagina: {
+        create: jest.fn().mockResolvedValue({ id: 'config-id' }),
+      },
+    };
+    prismaServico.$transaction.mockImplementation((callback) => callback(transacao));
+
+    const resultado = await servico.cadastrarProfissional({
+      nome: ' Monique Silva ',
+      email: ' MONIQUE@EXAMPLE.COM ',
+      senha: 'Senha@123',
+      slug: ' MONIQUE ',
+    });
+
+    expect(resultado).toEqual({
+      usuario: usuarioSeguro,
+      profissional,
+      acesso: {
+        token: 'token-jwt',
+        tipo: 'Bearer',
+        expiraEmSegundos: 900,
+      },
+    });
+    expect(transacao.usuario.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          nome: 'Monique Silva',
+          email: 'monique@example.com',
+          senhaHash: 'senha-hash',
+          papel: PapelUsuario.PROFISSIONAL,
+        }),
+      }),
+    );
+    expect(transacao.profissional.create).toHaveBeenCalledWith({
+      data: {
+        usuarioDonoId: 'usuario-id',
+        nomePublico: 'Monique Silva',
+        slug: 'monique',
+      },
+    });
+  });
+
+  it('converte conflito de email ou slug em ConflictException', async () => {
+    prismaServico.$transaction.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '5.19.1',
+      }),
+    );
+
+    await expect(
+      servico.cadastrarProfissional({
         nome: 'Monique Silva',
         email: 'monique@example.com',
         senha: 'Senha@123',
-        nomePublico: 'Monique Enfermeira',
-      };
+        slug: 'monique',
+      }),
+    ).rejects.toThrow(ConflictException);
+  });
 
-      const usuarioCriado = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        nome: dadosCadastro.nome,
-        email: dadosCadastro.email,
-        papel: 'PROFISSIONAL',
-        profissionalId: '223e4567-e89b-12d3-a456-426614174000',
-      };
+  it('entra com credenciais válidas', async () => {
+    prismaServico.usuario.findUnique.mockResolvedValue({
+      ...usuarioSeguro,
+      senhaHash: 'senha-hash',
+    });
+    prismaServico.usuario.update.mockResolvedValue(usuarioSeguro);
 
-      const profissionalCriado = {
-        id: '223e4567-e89b-12d3-a456-426614174000',
-        usuarioDonoId: usuarioCriado.id,
-        nomePublico: dadosCadastro.nomePublico,
-        slug: 'monique-enfermeira',
-        plano: 'GRATUITO',
-      };
-
-      mockedPrismaServico.usuario.create.mockResolvedValue(usuarioCriado);
-      mockedPrismaServico.profissional.create.mockResolvedValue(profissionalCriado);
-      mockedJwtServico.sign.mockReturnValue('token-jwt');
-
-      const resultado = await servico.cadastroProfissional(dadosCadastro);
-
-      expect(resultado).toHaveProperty('acessoToken');
-      expect(resultado).toHaveProperty('usuario');
-      expect(resultado.usuario.email).toBe(dadosCadastro.email);
-      expect(mockedPrismaServico.usuario.create).toHaveBeenCalled();
-      expect(mockedPrismaServico.profissional.create).toHaveBeenCalled();
+    const resultado = await servico.entrar({
+      email: ' MONIQUE@EXAMPLE.COM ',
+      senha: 'Senha@123',
     });
 
-    it('deve rejeitar email duplicado', async () => {
-      const dadosCadastro = {
-        nome: 'Outro Profissional',
-        email: 'existente@example.com',
-        senha: 'Senha@123',
-        nomePublico: 'Outro Nome',
-      };
-
-      mockedPrismaServico.usuario.create.mockRejectedValue(
-        new Error('Email já existe'),
-      );
-
-      await expect(servico.cadastroProfissional(dadosCadastro)).rejects.toThrow();
+    expect(resultado.usuario).toEqual(usuarioSeguro);
+    expect(resultado.acesso.token).toBe('token-jwt');
+    expect(prismaServico.usuario.findUnique).toHaveBeenCalledWith({
+      where: { email: 'monique@example.com' },
     });
-
-    it('deve validar força da senha', async () => {
-      const dadosCadastro = {
-        nome: 'Test User',
-        email: 'test@example.com',
-        senha: '123', // Senha fraca
-        nomePublico: 'Test',
-      };
-
-      await expect(servico.cadastroProfissional(dadosCadastro)).rejects.toThrow();
+    expect(prismaServico.usuario.update).toHaveBeenCalledWith({
+      where: { id: usuarioSeguro.id },
+      data: { ultimoAcessoEm: expect.any(Date) },
     });
   });
 
-  describe('login', () => {
-    it('deve fazer login com credenciais válidas', async () => {
-      const credenciais = {
-        email: 'monique@example.com',
-        senha: 'Senha@123',
-      };
+  it('bloqueia credenciais inválidas sem revelar motivo', async () => {
+    prismaServico.usuario.findUnique.mockResolvedValue(null);
 
-      const usuarioEncontrado = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        email: credenciais.email,
-        senhaHash: '$2b$12$...',
-        papel: 'PROFISSIONAL',
-        profissionalId: '223e4567-e89b-12d3-a456-426614174000',
-      };
-
-      mockedPrismaServico.usuario.findUnique.mockResolvedValue(
-        usuarioEncontrado,
-      );
-      mockedJwtServico.sign.mockReturnValue('token-jwt');
-
-      const resultado = await servico.login(credenciais);
-
-      expect(resultado).toHaveProperty('acessoToken');
-      expect(resultado).toHaveProperty('usuario');
-      expect(mockedPrismaServico.usuario.findUnique).toHaveBeenCalledWith({
-        where: { email: credenciais.email },
-      });
-    });
-
-    it('deve rejeitar credenciais inválidas', async () => {
-      const credenciais = {
-        email: 'inexistente@example.com',
-        senha: 'Senha@123',
-      };
-
-      mockedPrismaServico.usuario.findUnique.mockResolvedValue(null);
-
-      await expect(servico.login(credenciais)).rejects.toThrow(
-        'Usuário não encontrado',
-      );
-    });
-
-    it('deve rejeitar senha incorreta', async () => {
-      const credenciais = {
-        email: 'monique@example.com',
-        senha: 'SenhaErrada123',
-      };
-
-      const usuarioEncontrado = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        email: credenciais.email,
-        senhaHash: '$2b$12$...',
-        papel: 'PROFISSIONAL',
-        profissionalId: '223e4567-e89b-12d3-a456-426614174000',
-      };
-
-      mockedPrismaServico.usuario.findUnique.mockResolvedValue(
-        usuarioEncontrado,
-      );
-
-      await expect(servico.login(credenciais)).rejects.toThrow(
-        'Senha incorreta',
-      );
-    });
+    await expect(
+      servico.entrar({ email: 'inexistente@example.com', senha: 'Senha@123' }),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
-  describe('validarToken', () => {
-    it('deve validar token JWT válido', async () => {
-      const token = 'token-jwt-valido';
-      const payload = {
-        sub: '123e4567-e89b-12d3-a456-426614174000',
-        email: 'monique@example.com',
-        papel: 'PROFISSIONAL',
-      };
+  it('busca sessão segura pelo id do usuário', async () => {
+    prismaServico.usuario.findUniqueOrThrow.mockResolvedValue(usuarioSeguro);
 
-      mockedJwtServico.verify.mockReturnValue(payload);
-
-      const resultado = servico.validarToken(token);
-
-      expect(resultado).toEqual(payload);
-    });
-
-    it('deve rejeitar token inválido', () => {
-      const token = 'token-invalido';
-
-      mockedJwtServico.verify.mockImplementation(() => {
-        throw new Error('Token inválido');
-      });
-
-      expect(() => servico.validarToken(token)).toThrow('Token inválido');
+    await expect(servico.buscarSessao(usuarioSeguro.id)).resolves.toEqual({
+      usuario: usuarioSeguro,
     });
   });
 });
