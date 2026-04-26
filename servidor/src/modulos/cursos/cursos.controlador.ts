@@ -10,6 +10,7 @@ import { AuditoriaServico } from '../auditoria/auditoria.servico';
 import { CursosServico } from './cursos.servico';
 import { CriarAulaCursoDto } from './dto/criar-aula-curso.dto';
 import { CriarCursoDto } from './dto/criar-curso.dto';
+import { CriarInscricaoCursoDto } from './dto/criar-inscricao-curso.dto';
 import { CriarModuloCursoDto } from './dto/criar-modulo-curso.dto';
 
 @Controller('cursos')
@@ -72,6 +73,31 @@ export class CursosControlador {
     });
 
     return modulo;
+  }
+
+  @Post(':cursoId/inscricoes')
+  async criarInscricao(
+    @UsuarioAtual() usuario: UsuarioAutenticado,
+    @Param('cursoId') cursoId: string,
+    @Body() dados: CriarInscricaoCursoDto,
+  ) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const inscricao = await this.cursosServico.criarInscricao(profissionalId, cursoId, dados);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.inscricao_criada',
+      entidade: 'InscricaoCurso',
+      entidadeId: inscricao.id,
+      metadados: {
+        cursoId,
+        alunoId: dados.alunoId,
+        origem: 'pagamento_direto_confirmado',
+      },
+    });
+
+    return inscricao;
   }
 
   @Post(':cursoId/modulos/:moduloId/aulas')

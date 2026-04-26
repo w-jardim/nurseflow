@@ -13,6 +13,18 @@ export type Curso = {
   criadoEm: string;
 };
 
+export type InscricaoCurso = {
+  id: string;
+  cursoId: string;
+  alunoId: string;
+  criadoEm: string;
+  aluno: {
+    nome: string;
+    sobrenome: string | null;
+    email: string;
+  };
+};
+
 export type AulaCurso = {
   id: string;
   titulo: string;

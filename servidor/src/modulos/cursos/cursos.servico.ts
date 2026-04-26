@@ -3,6 +3,7 @@ import { ModalidadeCurso, Prisma, StatusCurso } from '@prisma/client';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
 import { CriarAulaCursoDto } from './dto/criar-aula-curso.dto';
 import { CriarCursoDto } from './dto/criar-curso.dto';
+import { CriarInscricaoCursoDto } from './dto/criar-inscricao-curso.dto';
 import { CriarModuloCursoDto } from './dto/criar-modulo-curso.dto';
 
 const CURSO_SELECT = {
@@ -118,6 +119,54 @@ export class CursosServico {
         aulas: true,
       },
     });
+  }
+
+  async criarInscricao(profissionalId: string, cursoId: string, dados: CriarInscricaoCursoDto) {
+    await this.obterCursoDoTenant(profissionalId, cursoId);
+
+    const aluno = await this.prisma.aluno.findFirst({
+      where: {
+        id: dados.alunoId,
+        profissionalId,
+        excluidoEm: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!aluno) {
+      throw new NotFoundException('Aluno não encontrado.');
+    }
+
+    try {
+      return await this.prisma.inscricaoCurso.create({
+        data: {
+          profissionalId,
+          cursoId,
+          alunoId: dados.alunoId,
+        },
+        select: {
+          id: true,
+          cursoId: true,
+          alunoId: true,
+          criadoEm: true,
+          aluno: {
+            select: {
+              nome: true,
+              sobrenome: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (erro) {
+      if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
+        throw new ConflictException('Aluno já está inscrito neste curso.');
+      }
+
+      throw erro;
+    }
   }
 
   async criarAula(

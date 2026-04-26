@@ -1,12 +1,14 @@
 import { FormEvent, useState } from 'react';
 import { CampoTexto } from './CampoTexto';
 import type { Curso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
+import type { Contato } from '../tipos/contatos';
 import { formatarReais, mascararReais, reaisParaCentavos } from '../utilitarios/moeda';
 
 const PRECO_MAXIMO_CENTAVOS = 100000000;
 
 type PainelCursosProps = {
   cursos: Curso[];
+  alunos: Contato[];
   aoCriar: (dados: {
     titulo: string;
     slug: string;
@@ -15,6 +17,7 @@ type PainelCursosProps = {
     precoCentavos: number;
     status: StatusCurso;
   }) => Promise<void>;
+  aoInscrever: (dados: { cursoId: string; alunoId: string }) => Promise<void>;
 };
 
 function gerarSlug(valor: string) {
@@ -27,7 +30,7 @@ function gerarSlug(valor: string) {
     .slice(0, 100);
 }
 
-export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
+export function PainelCursos({ cursos, alunos, aoCriar, aoInscrever }: PainelCursosProps) {
   const [titulo, setTitulo] = useState('');
   const [slug, setSlug] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -35,7 +38,12 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
   const [preco, setPreco] = useState('');
   const [status, setStatus] = useState<StatusCurso>('RASCUNHO');
   const [erro, setErro] = useState('');
+  const [cursoInscricaoId, setCursoInscricaoId] = useState('');
+  const [alunoInscricaoId, setAlunoInscricaoId] = useState('');
+  const [erroInscricao, setErroInscricao] = useState('');
+  const [inscricaoSalva, setInscricaoSalva] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [enviandoInscricao, setEnviandoInscricao] = useState(false);
 
   async function criar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -68,6 +76,24 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
       setErro(error instanceof Error ? error.message : 'Não foi possível salvar o curso.');
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function inscrever(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    setErroInscricao('');
+    setInscricaoSalva(false);
+    setEnviandoInscricao(true);
+
+    try {
+      await aoInscrever({ cursoId: cursoInscricaoId, alunoId: alunoInscricaoId });
+      setCursoInscricaoId('');
+      setAlunoInscricaoId('');
+      setInscricaoSalva(true);
+    } catch (error) {
+      setErroInscricao(error instanceof Error ? error.message : 'Não foi possível liberar o acesso.');
+    } finally {
+      setEnviandoInscricao(false);
     }
   }
 
@@ -178,6 +204,60 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
           </ul>
         )}
       </div>
+
+      <form className="mt-5 border-t border-slate-100 pt-4" onSubmit={inscrever}>
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Liberar acesso</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Use após confirmar o pagamento direto com o aluno.
+          </p>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm font-medium text-slate-800">Curso</span>
+            <select
+              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
+              required
+              value={cursoInscricaoId}
+              onChange={(evento) => setCursoInscricaoId(evento.target.value)}
+            >
+              <option value="">Selecione</option>
+              {cursos.map((curso) => (
+                <option key={curso.id} value={curso.id}>
+                  {curso.titulo}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium text-slate-800">Aluno</span>
+            <select
+              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
+              required
+              value={alunoInscricaoId}
+              onChange={(evento) => setAlunoInscricaoId(evento.target.value)}
+            >
+              <option value="">Selecione</option>
+              {alunos.map((aluno) => (
+                <option key={aluno.id} value={aluno.id}>
+                  {aluno.nome} {aluno.sobrenome} - {aluno.email}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {erroInscricao ? <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erroInscricao}</p> : null}
+        {inscricaoSalva ? <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Acesso liberado.</p> : null}
+
+        <button
+          className="mt-3 h-10 rounded-md bg-primario px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          disabled={enviandoInscricao || cursos.length === 0 || alunos.length === 0}
+          type="submit"
+        >
+          {enviandoInscricao ? 'Liberando...' : 'Liberar acesso'}
+        </button>
+      </form>
     </article>
   );
 }

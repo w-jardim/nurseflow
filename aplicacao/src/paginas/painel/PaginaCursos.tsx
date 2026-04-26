@@ -2,16 +2,24 @@ import { useEffect, useState } from 'react';
 import { PainelConteudoCurso } from '../../componentes/PainelConteudoCurso';
 import { PainelCursos } from '../../componentes/PainelCursos';
 import { requisitarApi } from '../../servicos/api';
-import type { Curso, ModalidadeCurso, StatusCurso } from '../../tipos/cursos';
+import type { Contato } from '../../tipos/contatos';
+import type { Curso, InscricaoCurso, ModalidadeCurso, StatusCurso } from '../../tipos/cursos';
 
 export function PaginaCursos() {
   const [cursos, setCursos] = useState<Curso[]>([]);
+  const [alunos, setAlunos] = useState<Contato[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
   useEffect(() => {
-    requisitarApi<Curso[]>('/cursos', { autenticada: true })
-      .then(setCursos)
+    Promise.all([
+      requisitarApi<Curso[]>('/cursos', { autenticada: true }),
+      requisitarApi<Contato[]>('/alunos', { autenticada: true }),
+    ])
+      .then(([listaCursos, listaAlunos]) => {
+        setCursos(listaCursos);
+        setAlunos(listaAlunos);
+      })
       .catch((e: Error) => setErro(e.message))
       .finally(() => setCarregando(false));
   }, []);
@@ -35,12 +43,22 @@ export function PaginaCursos() {
     setCursos((c) => [curso, ...c]);
   }
 
+  async function inscreverAluno(dados: { cursoId: string; alunoId: string }) {
+    await requisitarApi<InscricaoCurso>(`/cursos/${dados.cursoId}/inscricoes`, {
+      metodo: 'POST',
+      autenticada: true,
+      corpo: {
+        alunoId: dados.alunoId,
+      },
+    });
+  }
+
   if (carregando) return <div className="h-8 w-8 animate-spin rounded-full border-4 border-primario border-t-transparent" />;
   if (erro) return <p className="text-red-600">{erro}</p>;
 
   return (
     <div className="space-y-6">
-      <PainelCursos cursos={cursos} aoCriar={criarCurso} />
+      <PainelCursos cursos={cursos} alunos={alunos} aoCriar={criarCurso} aoInscrever={inscreverAluno} />
       <PainelConteudoCurso cursos={cursos} />
     </div>
   );
