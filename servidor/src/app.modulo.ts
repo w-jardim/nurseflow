@@ -8,6 +8,7 @@ import { AlunosModulo } from './modulos/alunos/alunos.modulo';
 import { AutenticacaoModulo } from './modulos/autenticacao/autenticacao.modulo';
 import { ConsultoriasModulo } from './modulos/consultorias/consultorias.modulo';
 import { CursosModulo } from './modulos/cursos/cursos.modulo';
+import { InteressesModulo } from './modulos/interesses/interesses.modulo';
 import { PacientesModulo } from './modulos/pacientes/pacientes.modulo';
 import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modulo';
 
@@ -23,6 +24,7 @@ import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modul
     CursosModulo,
     ConsultoriasModulo,
     ProfissionaisModulo,
+    InteressesModulo,
   ],
   controllers: [AppControlador],
   providers: [

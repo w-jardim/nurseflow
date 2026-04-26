@@ -4,6 +4,7 @@ import { PainelConsultorias } from '../componentes/PainelConsultorias';
 import { PainelConteudoCurso } from '../componentes/PainelConteudoCurso';
 import { PainelContatos } from '../componentes/PainelContatos';
 import { PainelCursos } from '../componentes/PainelCursos';
+import { PainelInteresses } from '../componentes/PainelInteresses';
 import { PainelPerfilProfissional } from '../componentes/PainelPerfilProfissional';
 import { requisitarApi } from '../servicos/api';
 import { limparToken } from '../servicos/sessao';
@@ -11,6 +12,7 @@ import type { Usuario } from '../tipos/autenticacao';
 import type { Contato } from '../tipos/contatos';
 import type { Consultoria, ModalidadeConsultoria } from '../tipos/consultorias';
 import type { Curso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
+import type { InteressePublico } from '../tipos/interesses';
 import type { PerfilProfissional } from '../tipos/profissionais';
 
 export function PaginaPainel() {
@@ -20,6 +22,7 @@ export function PaginaPainel() {
   const [pacientes, setPacientes] = useState<Contato[]>([]);
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [consultorias, setConsultorias] = useState<Consultoria[]>([]);
+  const [interesses, setInteresses] = useState<InteressePublico[]>([]);
   const [perfil, setPerfil] = useState<PerfilProfissional | null>(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -31,15 +34,27 @@ export function PaginaPainel() {
       requisitarApi<Curso[]>('/cursos', { autenticada: true }),
       requisitarApi<Consultoria[]>('/consultorias', { autenticada: true }),
       requisitarApi<PerfilProfissional>('/profissionais/me', { autenticada: true }),
+      requisitarApi<InteressePublico[]>('/interesses', { autenticada: true }),
     ])
-      .then(([sessao, listaAlunos, listaPacientes, listaCursos, listaConsultorias, perfilProfissional]) => {
+      .then(
+        ([
+          sessao,
+          listaAlunos,
+          listaPacientes,
+          listaCursos,
+          listaConsultorias,
+          perfilProfissional,
+          listaInteresses,
+        ]) => {
         setUsuario(sessao.usuario);
         setAlunos(listaAlunos);
         setPacientes(listaPacientes);
         setCursos(listaCursos);
         setConsultorias(listaConsultorias);
         setPerfil(perfilProfissional);
-      })
+        setInteresses(listaInteresses);
+        },
+      )
       .catch(() => {
         limparToken();
         navegar('/autenticacao/login');
@@ -238,6 +253,10 @@ export function PaginaPainel() {
 
         <div className="mt-4">
           <PainelConsultorias consultorias={consultorias} aoCriar={criarConsultoria} />
+        </div>
+
+        <div className="mt-4">
+          <PainelInteresses interesses={interesses} />
         </div>
       </section>
     </main>

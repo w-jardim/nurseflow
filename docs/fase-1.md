@@ -18,6 +18,8 @@ Primeira fatia implementada:
 - Consultorias como produtos avulsos, separadas de cursos e sem vínculo obrigatório com alunos ou pacientes
 - Perfil público do profissional
 - Página pública inicial com cursos publicados e consultorias
+- Formulário público de interesse sem criação automática de aluno ou paciente
+- Listagem de interesses recebidos no painel do profissional
 
 ## Endpoints
 
@@ -39,6 +41,8 @@ POST /consultorias
 GET /profissionais/me
 PUT /profissionais/me
 GET /publico/profissionais/:slug
+POST /publico/profissionais/:slug/interesses
+GET /interesses
 ```
 
 ## Rotas frontend

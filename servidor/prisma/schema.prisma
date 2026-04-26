@@ -57,6 +57,12 @@ enum ModalidadeConsultoria {
   PRESENCIAL
 }
 
+enum OrigemInteresse {
+  PERFIL
+  CURSO
+  CONSULTORIA
+}
+
 model Usuario {
   id                 String        @id @default(uuid()) @db.Uuid
   nome               String        @db.VarChar(120)
@@ -103,6 +109,7 @@ model Profissional {
   cursos             Curso[]
   consultas          Consulta[]
   consultorias       Consultoria[]
+  interesses         InteressePublico[]
   assinaturas        Assinatura[]
   transacoes         Transacao[]
   configuracaoPagina ConfiguracaoPagina?
@@ -178,6 +185,7 @@ model Curso {
   profissional   Profissional     @relation(fields: [profissionalId], references: [id])
   modulos        ModuloCurso[]
   inscricoes     InscricaoCurso[]
+  interesses     InteressePublico[]
 
   @@unique([profissionalId, slug])
   @@index([profissionalId, status])
@@ -279,9 +287,33 @@ model Consultoria {
   atualizadoEm   DateTime              @updatedAt @map("atualizado_em")
 
   profissional   Profissional          @relation(fields: [profissionalId], references: [id])
+  interesses     InteressePublico[]
 
   @@index([profissionalId, modalidade])
   @@map("consultorias")
+}
+
+model InteressePublico {
+  id             String          @id @default(uuid()) @db.Uuid
+  profissionalId String          @map("profissional_id") @db.Uuid
+  cursoId        String?         @map("curso_id") @db.Uuid
+  consultoriaId  String?         @map("consultoria_id") @db.Uuid
+  origem         OrigemInteresse @default(PERFIL)
+  nome           String          @db.VarChar(120)
+  email          String          @db.VarChar(255)
+  telefone       String?         @db.VarChar(24)
+  mensagem       String?
+  visualizadoEm  DateTime?       @map("visualizado_em")
+  criadoEm       DateTime        @default(now()) @map("criado_em")
+
+  profissional   Profissional    @relation(fields: [profissionalId], references: [id])
+  curso          Curso?          @relation(fields: [cursoId], references: [id])
+  consultoria    Consultoria?    @relation(fields: [consultoriaId], references: [id])
+
+  @@index([profissionalId, criadoEm])
+  @@index([cursoId])
+  @@index([consultoriaId])
+  @@map("interesses_publicos")
 }
 
 model Assinatura {
