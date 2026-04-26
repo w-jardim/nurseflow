@@ -1,12 +1,12 @@
 import {
-  IsDateString,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
-  IsUUID,
+  Max,
   MaxLength,
+  Min,
   MinLength,
-  ValidateIf,
 } from 'class-validator';
 import { ModalidadeConsultoria } from '@prisma/client';
 
@@ -24,29 +24,8 @@ export class CriarConsultoriaDto {
   @IsEnum(ModalidadeConsultoria)
   modalidade!: ModalidadeConsultoria;
 
-  @ValidateIf((objeto: CriarConsultoriaDto) => !objeto.pacienteId)
-  @IsUUID()
-  alunoId?: string;
-
-  @ValidateIf((objeto: CriarConsultoriaDto) => !objeto.alunoId)
-  @IsUUID()
-  pacienteId?: string;
-
-  @IsOptional()
-  @IsDateString()
-  inicioEm?: string;
-
-  @IsOptional()
-  @IsDateString()
-  fimEm?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(160)
-  local?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  linkOnline?: string;
+  @IsInt()
+  @Min(0)
+  @Max(100000000)
+  precoCentavos!: number;
 }

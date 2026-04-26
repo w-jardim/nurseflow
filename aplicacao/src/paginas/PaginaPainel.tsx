@@ -137,13 +137,7 @@ export function PaginaPainel() {
     titulo: string;
     descricao: string;
     modalidade: ModalidadeConsultoria;
-    publico: 'ALUNO' | 'PACIENTE';
-    alunoId: string;
-    pacienteId: string;
-    inicioEm: string;
-    fimEm: string;
-    local: string;
-    linkOnline: string;
+    precoCentavos: number;
   }) {
     const consultoria = await requisitarApi<Consultoria>('/consultorias', {
       metodo: 'POST',
@@ -152,12 +146,7 @@ export function PaginaPainel() {
         titulo: dados.titulo,
         descricao: dados.descricao || undefined,
         modalidade: dados.modalidade,
-        alunoId: dados.publico === 'ALUNO' ? dados.alunoId : undefined,
-        pacienteId: dados.publico === 'PACIENTE' ? dados.pacienteId : undefined,
-        inicioEm: dados.inicioEm || undefined,
-        fimEm: dados.fimEm || undefined,
-        local: dados.local || undefined,
-        linkOnline: dados.linkOnline || undefined,
+        precoCentavos: dados.precoCentavos,
       },
     });
     setConsultorias((atuais) => [consultoria, ...atuais]);
@@ -217,12 +206,7 @@ export function PaginaPainel() {
         </div>
 
         <div className="mt-4">
-          <PainelConsultorias
-            alunos={alunos}
-            pacientes={pacientes}
-            consultorias={consultorias}
-            aoCriar={criarConsultoria}
-          />
+          <PainelConsultorias consultorias={consultorias} aoCriar={criarConsultoria} />
         </div>
       </section>
     </main>
