@@ -5,13 +5,21 @@ export function formatarReais(valorCentavos: number) {
   }).format(valorCentavos / 100);
 }
 
+export function formatarReaisSemSimbolo(valorCentavos: number) {
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valorCentavos / 100);
+}
+
+export function mascararReais(valor: string) {
+  const digitos = valor.replace(/\D/g, '').slice(0, 11);
+  const centavos = Number(digitos || 0);
+
+  return formatarReaisSemSimbolo(centavos);
+}
+
 export function reaisParaCentavos(valor: string) {
-  const normalizado = valor.replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, '');
-  const numero = Number(normalizado);
-
-  if (!Number.isFinite(numero) || numero < 0) {
-    return 0;
-  }
-
-  return Math.round(numero * 100);
+  const digitos = valor.replace(/\D/g, '');
+  return Number(digitos || 0);
 }

@@ -1,7 +1,9 @@
 import { FormEvent, useState } from 'react';
 import { CampoTexto } from './CampoTexto';
 import type { Curso, StatusCurso } from '../tipos/cursos';
-import { formatarReais, reaisParaCentavos } from '../utilitarios/moeda';
+import { formatarReais, mascararReais, reaisParaCentavos } from '../utilitarios/moeda';
+
+const PRECO_MAXIMO_CENTAVOS = 100000000;
 
 type PainelCursosProps = {
   cursos: Curso[];
@@ -36,6 +38,13 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
   async function criar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setErro('');
+    const precoCentavos = reaisParaCentavos(preco);
+
+    if (precoCentavos > PRECO_MAXIMO_CENTAVOS) {
+      setErro(`Preço máximo permitido: ${formatarReais(PRECO_MAXIMO_CENTAVOS)}.`);
+      return;
+    }
+
     setEnviando(true);
 
     try {
@@ -43,7 +52,7 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
         titulo,
         slug,
         descricao,
-        precoCentavos: reaisParaCentavos(preco),
+        precoCentavos,
         status,
       });
       setTitulo('');
@@ -97,9 +106,9 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
             rotulo="Preço"
             name="curso-preco"
             placeholder="0,00"
-            inputMode="decimal"
+            inputMode="numeric"
             value={preco}
-            onChange={(evento) => setPreco(evento.target.value)}
+            onChange={(evento) => setPreco(mascararReais(evento.target.value))}
             required
           />
           <label className="block">
