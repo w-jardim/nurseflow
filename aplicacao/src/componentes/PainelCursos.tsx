@@ -80,17 +80,18 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
           name="curso-titulo"
           value={titulo}
           onChange={(evento) => {
-            setTitulo(evento.target.value);
-            setSlug((atual) => atual || gerarSlug(evento.target.value));
+            const novoTitulo = evento.target.value;
+            setTitulo(novoTitulo);
+            setSlug(gerarSlug(novoTitulo));
           }}
           required
         />
         <CampoTexto
-          rotulo="Endereço do curso na página"
+          rotulo="Endereço gerado para o curso"
           name="curso-slug"
           placeholder="primeiros-socorros"
           value={slug}
-          onChange={(evento) => setSlug(gerarSlug(evento.target.value))}
+          readOnly
           required
         />
         <label className="block">
