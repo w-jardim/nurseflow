@@ -36,23 +36,46 @@ export function PaginaPainel() {
     navegar('/autenticacao/login');
   }
 
-  async function criarAluno(dados: { nome: string; email: string; telefone: string }) {
+  async function criarAluno(dados: {
+    nome: string;
+    sobrenome: string;
+    cpf: string;
+    email: string;
+    telefone: string;
+    endereco: string;
+  }) {
     const aluno = await requisitarApi<Contato>('/alunos', {
       metodo: 'POST',
       autenticada: true,
-      corpo: dados,
+      corpo: {
+        nome: dados.nome,
+        sobrenome: dados.sobrenome,
+        cpf: dados.cpf,
+        email: dados.email,
+        telefone: dados.telefone || undefined,
+      },
     });
     setAlunos((atuais) => [aluno, ...atuais]);
   }
 
-  async function criarPaciente(dados: { nome: string; email: string; telefone: string }) {
+  async function criarPaciente(dados: {
+    nome: string;
+    sobrenome: string;
+    cpf: string;
+    email: string;
+    telefone: string;
+    endereco: string;
+  }) {
     const paciente = await requisitarApi<Contato>('/pacientes', {
       metodo: 'POST',
       autenticada: true,
       corpo: {
         nome: dados.nome,
+        sobrenome: dados.sobrenome,
+        cpf: dados.cpf,
         email: dados.email || undefined,
         telefone: dados.telefone || undefined,
+        endereco: dados.endereco || undefined,
       },
     });
     setPacientes((atuais) => [paciente, ...atuais]);
@@ -98,6 +121,7 @@ export function PaginaPainel() {
             titulo="Paciente"
             descricao="Cadastre pacientes para atendimentos e agenda."
             contatos={pacientes}
+            coletarEndereco
             aoCriar={criarPaciente}
           />
         </div>

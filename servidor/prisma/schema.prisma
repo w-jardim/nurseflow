@@ -105,7 +105,9 @@ model Aluno {
   profissionalId String          @map("profissional_id") @db.Uuid
   usuarioId      String?         @unique @map("usuario_id") @db.Uuid
   nome           String          @db.VarChar(120)
+  sobrenome      String?         @db.VarChar(120)
   email          String          @db.VarChar(255)
+  cpf            String?         @db.VarChar(11)
   telefone       String?         @db.VarChar(24)
   criadoEm       DateTime        @default(now()) @map("criado_em")
   atualizadoEm   DateTime        @updatedAt @map("atualizado_em")
@@ -116,6 +118,7 @@ model Aluno {
   inscricoes     InscricaoCurso[]
 
   @@unique([profissionalId, email])
+  @@unique([profissionalId, cpf])
   @@index([profissionalId, nome])
   @@map("alunos")
 }
@@ -125,8 +128,11 @@ model Paciente {
   profissionalId String       @map("profissional_id") @db.Uuid
   usuarioId      String?      @unique @map("usuario_id") @db.Uuid
   nome           String       @db.VarChar(120)
+  sobrenome      String?      @db.VarChar(120)
+  cpf            String?      @db.VarChar(11)
   email          String?      @db.VarChar(255)
   telefone       String?      @db.VarChar(24)
+  endereco       String?      @db.VarChar(255)
   criadoEm       DateTime     @default(now()) @map("criado_em")
   atualizadoEm   DateTime     @updatedAt @map("atualizado_em")
   excluidoEm     DateTime?    @map("excluido_em")
@@ -136,6 +142,7 @@ model Paciente {
   consultas      Consulta[]
 
   @@index([profissionalId, nome])
+  @@unique([profissionalId, cpf])
   @@map("pacientes")
 }
 
