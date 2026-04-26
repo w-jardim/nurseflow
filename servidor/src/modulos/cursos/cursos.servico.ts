@@ -1,5 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { ModalidadeCurso, Prisma, StatusCurso } from '@prisma/client';
+import { ModalidadeCurso, PapelUsuario, Prisma, StatusCurso } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
 import { CriarAulaCursoDto } from './dto/criar-aula-curso.dto';
 import { CriarCursoDto } from './dto/criar-curso.dto';
@@ -132,6 +134,10 @@ export class CursosServico {
       },
       select: {
         id: true,
+        nome: true,
+        sobrenome: true,
+        email: true,
+        usuarioId: true,
       },
     });
 
@@ -139,8 +145,24 @@ export class CursosServico {
       throw new NotFoundException('Aluno não encontrado.');
     }
 
+    const inscricaoExistente = await this.prisma.inscricaoCurso.findFirst({
+      where: {
+        cursoId,
+        alunoId: dados.alunoId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (inscricaoExistente) {
+      throw new ConflictException('Aluno já está inscrito neste curso.');
+    }
+
+    const acessoAluno = await this.garantirAcessoAluno(profissionalId, aluno);
+
     try {
-      return await this.prisma.inscricaoCurso.create({
+      const inscricao = await this.prisma.inscricaoCurso.create({
         data: {
           profissionalId,
           cursoId,
@@ -160,6 +182,11 @@ export class CursosServico {
           },
         },
       });
+
+      return {
+        ...inscricao,
+        acessoAluno,
+      };
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
         throw new ConflictException('Aluno já está inscrito neste curso.');
@@ -167,6 +194,122 @@ export class CursosServico {
 
       throw erro;
     }
+  }
+
+  listarCursosDoAluno(usuarioId: string) {
+    return this.prisma.inscricaoCurso.findMany({
+      where: {
+        aluno: {
+          usuarioId,
+          excluidoEm: null,
+        },
+        curso: {
+          status: StatusCurso.PUBLICADO,
+          excluidoEm: null,
+        },
+      },
+      orderBy: {
+        criadoEm: 'desc',
+      },
+      select: {
+        id: true,
+        criadoEm: true,
+        concluidoEm: true,
+        curso: {
+          select: {
+            id: true,
+            titulo: true,
+            slug: true,
+            descricao: true,
+            modalidade: true,
+            precoCentavos: true,
+            status: true,
+            publicadoEm: true,
+            criadoEm: true,
+            profissional: {
+              select: {
+                nomePublico: true,
+              },
+            },
+            _count: {
+              select: {
+                modulos: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async obterCursoDoAluno(usuarioId: string, cursoId: string) {
+    const inscricao = await this.prisma.inscricaoCurso.findFirst({
+      where: {
+        cursoId,
+        aluno: {
+          usuarioId,
+          excluidoEm: null,
+        },
+        curso: {
+          status: StatusCurso.PUBLICADO,
+          excluidoEm: null,
+        },
+      },
+      select: {
+        id: true,
+        criadoEm: true,
+        concluidoEm: true,
+        curso: {
+          select: {
+            id: true,
+            titulo: true,
+            slug: true,
+            descricao: true,
+            modalidade: true,
+            precoCentavos: true,
+            status: true,
+            publicadoEm: true,
+            criadoEm: true,
+            profissional: {
+              select: {
+                nomePublico: true,
+              },
+            },
+            modulos: {
+              orderBy: {
+                ordem: 'asc',
+              },
+              select: {
+                id: true,
+                titulo: true,
+                ordem: true,
+                criadoEm: true,
+                aulas: {
+                  orderBy: {
+                    ordem: 'asc',
+                  },
+                  select: {
+                    id: true,
+                    titulo: true,
+                    descricao: true,
+                    videoReferencia: true,
+                    duracaoSegundos: true,
+                    ordem: true,
+                    criadoEm: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!inscricao) {
+      throw new NotFoundException('Curso não encontrado para este aluno.');
+    }
+
+    return inscricao;
   }
 
   async criarAula(
@@ -233,5 +376,60 @@ export class CursosServico {
     }
 
     return curso;
+  }
+
+  private async garantirAcessoAluno(
+    profissionalId: string,
+    aluno: {
+      id: string;
+      nome: string;
+      sobrenome: string | null;
+      email: string;
+      usuarioId: string | null;
+    },
+  ) {
+    if (aluno.usuarioId) {
+      return null;
+    }
+
+    const senhaTemporaria = randomBytes(6).toString('base64url');
+    const senhaHash = await bcrypt.hash(senhaTemporaria, 12);
+
+    try {
+      const usuario = await this.prisma.usuario.create({
+        data: {
+          nome: [aluno.nome, aluno.sobrenome].filter(Boolean).join(' '),
+          email: aluno.email.trim().toLowerCase(),
+          senhaHash,
+          papel: PapelUsuario.ALUNO,
+          profissionalId,
+        },
+        select: {
+          id: true,
+          email: true,
+        },
+      });
+
+      await this.prisma.aluno.update({
+        where: {
+          id: aluno.id,
+        },
+        data: {
+          usuarioId: usuario.id,
+        },
+      });
+
+      return {
+        email: usuario.email,
+        senhaTemporaria,
+        criadoAgora: true,
+      };
+    } catch (erro) {
+      if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
+        throw new ConflictException('E-mail do aluno já possui usuário de acesso.');
+      }
+
+      throw erro;
+    }
   }
 }

@@ -23,6 +23,34 @@ export type InscricaoCurso = {
     sobrenome: string | null;
     email: string;
   };
+  acessoAluno: {
+    email: string;
+    senhaTemporaria: string;
+    criadoAgora: boolean;
+  } | null;
+};
+
+export type CursoAluno = {
+  id: string;
+  criadoEm: string;
+  concluidoEm: string | null;
+  curso: Curso & {
+    profissional: {
+      nomePublico: string;
+    };
+    _count: {
+      modulos: number;
+    };
+  };
+};
+
+export type CursoAlunoDetalhe = Omit<CursoAluno, 'curso'> & {
+  curso: Curso & {
+    profissional: {
+      nomePublico: string;
+    };
+    modulos: ModuloCurso[];
+  };
 };
 
 export type AulaCurso = {

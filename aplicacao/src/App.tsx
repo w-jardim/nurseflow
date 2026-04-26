@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { LayoutAutenticacao } from './componentes/LayoutAutenticacao';
 import { LayoutPainel } from './componentes/layout/LayoutPainel';
+import { PaginaAlunoCursos } from './paginas/aluno/PaginaAlunoCursos';
 import { PaginaAdminMetricas } from './paginas/admin/PaginaAdminMetricas';
 import { PaginaAdminProfissionais } from './paginas/admin/PaginaAdminProfissionais';
 import { PaginaCadastro } from './paginas/PaginaCadastro';
@@ -38,6 +39,9 @@ export function App() {
         <Route path="/painel/interesses" element={<PaginaInteresses />} />
         <Route path="/painel/auditoria" element={<PaginaAuditoria />} />
         <Route path="/painel/perfil" element={<PaginaPerfil />} />
+
+        {/* Portal do Aluno */}
+        <Route path="/aluno/cursos" element={<PaginaAlunoCursos />} />
 
         {/* Super Admin */}
         <Route path="/admin" element={<PaginaAdminMetricas />} />

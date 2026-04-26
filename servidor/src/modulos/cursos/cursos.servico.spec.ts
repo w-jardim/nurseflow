@@ -24,8 +24,14 @@ describe('CursosServico', () => {
     },
     aluno: {
       findFirst: jest.fn(),
+      update: jest.fn(),
     },
     inscricaoCurso: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    usuario: {
       create: jest.fn(),
     },
   };
@@ -46,7 +52,7 @@ describe('CursosServico', () => {
 
   beforeEach(() => {
     servico = new CursosServico(prismaServico as unknown as PrismaServico);
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it('lista cursos ativos do profissional', async () => {
@@ -205,16 +211,22 @@ describe('CursosServico', () => {
       },
     };
     prismaServico.curso.findFirst.mockResolvedValue({ id: cursoId });
-    prismaServico.aluno.findFirst.mockResolvedValue({ id: alunoId });
+    prismaServico.aluno.findFirst.mockResolvedValue({
+      id: alunoId,
+      nome: 'Ana',
+      sobrenome: 'Silva',
+      email: 'ana@example.com',
+      usuarioId: 'usuario-id',
+    });
     prismaServico.inscricaoCurso.create.mockResolvedValue(inscricao);
 
     await expect(servico.criarInscricao(profissionalId, cursoId, { alunoId })).resolves.toEqual(
-      inscricao,
+      { ...inscricao, acessoAluno: null },
     );
 
     expect(prismaServico.aluno.findFirst).toHaveBeenCalledWith({
       where: { id: alunoId, profissionalId, excluidoEm: null },
-      select: { id: true },
+      select: { id: true, nome: true, sobrenome: true, email: true, usuarioId: true },
     });
     expect(prismaServico.inscricaoCurso.create).toHaveBeenCalledWith({
       data: { profissionalId, cursoId, alunoId },
@@ -241,7 +253,13 @@ describe('CursosServico', () => {
   it('converte inscrição duplicada em ConflictException', async () => {
     const alunoId = '222e4567-e89b-12d3-a456-426614174000';
     prismaServico.curso.findFirst.mockResolvedValue({ id: cursoId });
-    prismaServico.aluno.findFirst.mockResolvedValue({ id: alunoId });
+    prismaServico.aluno.findFirst.mockResolvedValue({
+      id: alunoId,
+      nome: 'Ana',
+      sobrenome: 'Silva',
+      email: 'ana@example.com',
+      usuarioId: 'usuario-id',
+    });
     prismaServico.inscricaoCurso.create.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
         code: 'P2002',
@@ -251,6 +269,101 @@ describe('CursosServico', () => {
 
     await expect(servico.criarInscricao(profissionalId, cursoId, { alunoId })).rejects.toThrow(
       ConflictException,
+    );
+  });
+
+  it('bloqueia inscrição duplicada antes de criar usuário do aluno', async () => {
+    const alunoId = '222e4567-e89b-12d3-a456-426614174000';
+    prismaServico.curso.findFirst.mockResolvedValue({ id: cursoId });
+    prismaServico.aluno.findFirst.mockResolvedValue({
+      id: alunoId,
+      nome: 'Ana',
+      sobrenome: 'Silva',
+      email: 'ana@example.com',
+      usuarioId: null,
+    });
+    prismaServico.inscricaoCurso.findFirst.mockResolvedValue({ id: 'inscricao-existente' });
+
+    await expect(servico.criarInscricao(profissionalId, cursoId, { alunoId })).rejects.toThrow(
+      ConflictException,
+    );
+
+    expect(prismaServico.usuario.create).not.toHaveBeenCalled();
+    expect(prismaServico.inscricaoCurso.create).not.toHaveBeenCalled();
+  });
+
+  it('cria usuário de acesso do aluno ao liberar primeira inscrição', async () => {
+    const alunoId = '222e4567-e89b-12d3-a456-426614174000';
+    const inscricao = {
+      id: 'inscricao-id',
+      cursoId,
+      alunoId,
+      criadoEm: new Date(),
+      aluno: {
+        nome: 'Ana',
+        sobrenome: null,
+        email: 'ana@example.com',
+      },
+    };
+    prismaServico.curso.findFirst.mockResolvedValue({ id: cursoId });
+    prismaServico.aluno.findFirst.mockResolvedValue({
+      id: alunoId,
+      nome: 'Ana',
+      sobrenome: null,
+      email: 'ana@example.com',
+      usuarioId: null,
+    });
+    prismaServico.usuario.create.mockResolvedValue({ id: 'usuario-id', email: 'ana@example.com' });
+    prismaServico.aluno.update.mockResolvedValue({ id: alunoId });
+    prismaServico.inscricaoCurso.create.mockResolvedValue(inscricao);
+
+    const resultado = await servico.criarInscricao(profissionalId, cursoId, { alunoId });
+
+    expect(resultado.acessoAluno).toEqual({
+      email: 'ana@example.com',
+      senhaTemporaria: expect.any(String),
+      criadoAgora: true,
+    });
+    expect(prismaServico.usuario.create).toHaveBeenCalledWith({
+      data: {
+        nome: 'Ana',
+        email: 'ana@example.com',
+        senhaHash: expect.any(String),
+        papel: 'ALUNO',
+        profissionalId,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+    expect(prismaServico.aluno.update).toHaveBeenCalledWith({
+      where: { id: alunoId },
+      data: { usuarioId: 'usuario-id' },
+    });
+  });
+
+  it('lista cursos publicados do aluno autenticado', async () => {
+    const inscricoes = [{ id: 'inscricao-id', curso: { id: cursoId, titulo: 'Curso' } }];
+    prismaServico.inscricaoCurso.findMany.mockResolvedValue(inscricoes);
+
+    await expect(servico.listarCursosDoAluno('usuario-id')).resolves.toEqual(inscricoes);
+
+    expect(prismaServico.inscricaoCurso.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          aluno: { usuarioId: 'usuario-id', excluidoEm: null },
+          curso: { status: StatusCurso.PUBLICADO, excluidoEm: null },
+        },
+      }),
+    );
+  });
+
+  it('bloqueia conteúdo de curso sem inscrição do aluno', async () => {
+    prismaServico.inscricaoCurso.findFirst.mockResolvedValue(null);
+
+    await expect(servico.obterCursoDoAluno('usuario-id', cursoId)).rejects.toThrow(
+      NotFoundException,
     );
   });
 });

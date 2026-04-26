@@ -5,6 +5,12 @@ import { requisitarApi } from '../servicos/api';
 import { salvarToken } from '../servicos/sessao';
 import type { RespostaAutenticacao } from '../tipos/autenticacao';
 
+function rotaInicialPorPapel(papel: RespostaAutenticacao['usuario']['papel']) {
+  if (papel === 'SUPER_ADMIN') return '/admin';
+  if (papel === 'ALUNO') return '/aluno/cursos';
+  return '/painel';
+}
+
 export function PaginaLogin() {
   const navegar = useNavigate();
   const [email, setEmail] = useState('');
@@ -24,7 +30,7 @@ export function PaginaLogin() {
       });
 
       salvarToken(resposta.acesso.token);
-      navegar(resposta.usuario.papel === 'SUPER_ADMIN' ? '/admin' : '/painel');
+      navegar(rotaInicialPorPapel(resposta.usuario.papel));
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Não foi possível entrar.');
     } finally {

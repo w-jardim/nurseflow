@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { CampoTexto } from './CampoTexto';
-import type { Curso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
+import type { Curso, InscricaoCurso, ModalidadeCurso, StatusCurso } from '../tipos/cursos';
 import type { Contato } from '../tipos/contatos';
 import { formatarReais, mascararReais, reaisParaCentavos } from '../utilitarios/moeda';
 
@@ -17,7 +17,7 @@ type PainelCursosProps = {
     precoCentavos: number;
     status: StatusCurso;
   }) => Promise<void>;
-  aoInscrever: (dados: { cursoId: string; alunoId: string }) => Promise<void>;
+  aoInscrever: (dados: { cursoId: string; alunoId: string }) => Promise<InscricaoCurso>;
 };
 
 function gerarSlug(valor: string) {
@@ -42,6 +42,7 @@ export function PainelCursos({ cursos, alunos, aoCriar, aoInscrever }: PainelCur
   const [alunoInscricaoId, setAlunoInscricaoId] = useState('');
   const [erroInscricao, setErroInscricao] = useState('');
   const [inscricaoSalva, setInscricaoSalva] = useState(false);
+  const [acessoAluno, setAcessoAluno] = useState<InscricaoCurso['acessoAluno']>(null);
   const [enviando, setEnviando] = useState(false);
   const [enviandoInscricao, setEnviandoInscricao] = useState(false);
 
@@ -83,13 +84,15 @@ export function PainelCursos({ cursos, alunos, aoCriar, aoInscrever }: PainelCur
     evento.preventDefault();
     setErroInscricao('');
     setInscricaoSalva(false);
+    setAcessoAluno(null);
     setEnviandoInscricao(true);
 
     try {
-      await aoInscrever({ cursoId: cursoInscricaoId, alunoId: alunoInscricaoId });
+      const inscricao = await aoInscrever({ cursoId: cursoInscricaoId, alunoId: alunoInscricaoId });
       setCursoInscricaoId('');
       setAlunoInscricaoId('');
       setInscricaoSalva(true);
+      setAcessoAluno(inscricao.acessoAluno);
     } catch (error) {
       setErroInscricao(error instanceof Error ? error.message : 'Não foi possível liberar o acesso.');
     } finally {
@@ -248,7 +251,16 @@ export function PainelCursos({ cursos, alunos, aoCriar, aoInscrever }: PainelCur
         </div>
 
         {erroInscricao ? <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erroInscricao}</p> : null}
-        {inscricaoSalva ? <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Acesso liberado.</p> : null}
+        {inscricaoSalva ? (
+          <div className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <p>Acesso liberado.</p>
+            {acessoAluno ? (
+              <p className="mt-1 font-medium">
+                Login do aluno: {acessoAluno.email} · Senha temporária: {acessoAluno.senhaTemporaria}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <button
           className="mt-3 h-10 rounded-md bg-primario px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"

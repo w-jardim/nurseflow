@@ -44,7 +44,7 @@ export function PaginaCursos() {
   }
 
   async function inscreverAluno(dados: { cursoId: string; alunoId: string }) {
-    await requisitarApi<InscricaoCurso>(`/cursos/${dados.cursoId}/inscricoes`, {
+    return requisitarApi<InscricaoCurso>(`/cursos/${dados.cursoId}/inscricoes`, {
       metodo: 'POST',
       autenticada: true,
       corpo: {
