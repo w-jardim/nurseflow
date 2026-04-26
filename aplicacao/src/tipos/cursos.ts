@@ -10,3 +10,21 @@ export type Curso = {
   publicadoEm: string | null;
   criadoEm: string;
 };
+
+export type AulaCurso = {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  videoReferencia: string | null;
+  duracaoSegundos: number | null;
+  ordem: number;
+  criadoEm: string;
+};
+
+export type ModuloCurso = {
+  id: string;
+  titulo: string;
+  ordem: number;
+  criadoEm: string;
+  aulas: AulaCurso[];
+};

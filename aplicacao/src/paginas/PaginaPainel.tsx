@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PainelConteudoCurso } from '../componentes/PainelConteudoCurso';
 import { PainelContatos } from '../componentes/PainelContatos';
 import { PainelCursos } from '../componentes/PainelCursos';
 import { requisitarApi } from '../servicos/api';
@@ -172,6 +173,10 @@ export function PaginaPainel() {
 
         <div className="mt-4">
           <PainelCursos cursos={cursos} aoCriar={criarCurso} />
+        </div>
+
+        <div className="mt-4">
+          <PainelConteudoCurso cursos={cursos} />
         </div>
       </section>
     </main>
