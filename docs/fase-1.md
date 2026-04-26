@@ -22,6 +22,7 @@ Primeira fatia implementada:
 - Listagem de interesses recebidos no painel do profissional
 - Agenda inicial de atendimentos vinculada a pacientes do profissional
 - Trilha de auditoria básica para ações do profissional
+- RBAC básico com rotas privadas do profissional protegidas por papel
 
 ## Endpoints
 
@@ -63,6 +64,6 @@ GET /auditoria
 
 - Refresh token persistido em Redis
 - 2FA para Super Admin
-- Decorador de papéis e RBAC em rotas
 - Recuperação de senha
 - Melhorias de auditoria com filtros e detalhes de segurança
+- Painel Super Admin inicial

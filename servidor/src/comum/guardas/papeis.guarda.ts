@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { PapelUsuario } from '@prisma/client';
 import { CHAVE_PAPEIS } from '../decoradores/papeis.decorador';
@@ -23,9 +23,13 @@ export class PapeisGuarda implements CanActivate {
     const usuario = requisicao.usuario ?? requisicao.user;
 
     if (!usuario) {
-      return false;
+      throw new ForbiddenException('Usuário autenticado não encontrado na requisição.');
     }
 
-    return papeisPermitidos.includes(usuario.papel);
+    if (!papeisPermitidos.includes(usuario.papel)) {
+      throw new ForbiddenException('Usuário sem permissão para acessar este recurso.');
+    }
+
+    return true;
   }
 }

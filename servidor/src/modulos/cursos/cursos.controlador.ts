@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { PapelUsuario } from '@prisma/client';
+import { Papeis } from '../../comum/decoradores/papeis.decorador';
 import { UsuarioAtual } from '../../comum/decoradores/usuario-atual.decorador';
 import { obterTenantObrigatorio } from '../../comum/erros/tenant-obrigatorio';
 import { JwtAuthGuarda } from '../../comum/guardas/jwt-auth.guarda';
+import { PapeisGuarda } from '../../comum/guardas/papeis.guarda';
 import type { UsuarioAutenticado } from '../../comum/tipos/requisicao-autenticada';
 import { AuditoriaServico } from '../auditoria/auditoria.servico';
 import { CursosServico } from './cursos.servico';
@@ -10,7 +13,8 @@ import { CriarCursoDto } from './dto/criar-curso.dto';
 import { CriarModuloCursoDto } from './dto/criar-modulo-curso.dto';
 
 @Controller('cursos')
-@UseGuards(JwtAuthGuarda)
+@UseGuards(JwtAuthGuarda, PapeisGuarda)
+@Papeis(PapelUsuario.PROFISSIONAL)
 export class CursosControlador {
   constructor(
     private readonly cursosServico: CursosServico,
