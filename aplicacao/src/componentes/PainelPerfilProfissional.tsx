@@ -11,6 +11,9 @@ type PainelPerfilProfissionalProps = {
     bio: string;
     telefone: string;
     conselho: string;
+    pixChave: string;
+    linkPagamento: string;
+    instrucoesPagamento: string;
   }) => Promise<void>;
 };
 
@@ -30,6 +33,9 @@ export function PainelPerfilProfissional({ perfil, aoSalvar }: PainelPerfilProfi
   const [bio, setBio] = useState('');
   const [telefone, setTelefone] = useState('');
   const [conselho, setConselho] = useState('');
+  const [pixChave, setPixChave] = useState('');
+  const [linkPagamento, setLinkPagamento] = useState('');
+  const [instrucoesPagamento, setInstrucoesPagamento] = useState('');
   const [erro, setErro] = useState('');
   const [salvo, setSalvo] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -44,6 +50,9 @@ export function PainelPerfilProfissional({ perfil, aoSalvar }: PainelPerfilProfi
     setBio(perfil.bio ?? '');
     setTelefone(perfil.telefone ? mascararTelefone(perfil.telefone) : '');
     setConselho(perfil.conselho ?? '');
+    setPixChave(perfil.pixChave ?? '');
+    setLinkPagamento(perfil.linkPagamento ?? '');
+    setInstrucoesPagamento(perfil.instrucoesPagamento ?? '');
   }, [perfil]);
 
   async function salvar(evento: FormEvent<HTMLFormElement>) {
@@ -59,6 +68,9 @@ export function PainelPerfilProfissional({ perfil, aoSalvar }: PainelPerfilProfi
         bio,
         telefone,
         conselho,
+        pixChave,
+        linkPagamento,
+        instrucoesPagamento,
       });
       setSalvo(true);
     } catch (error) {
@@ -131,6 +143,37 @@ export function PainelPerfilProfissional({ perfil, aoSalvar }: PainelPerfilProfi
             value={conselho}
             onChange={(evento) => setConselho(evento.target.value)}
           />
+        </div>
+
+        <div className="mt-2 border-t border-slate-100 pt-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Recebimento direto</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <CampoTexto
+              rotulo="Chave PIX"
+              name="perfil-pix-chave"
+              placeholder="CPF, e-mail, telefone ou chave aleatória"
+              value={pixChave}
+              onChange={(evento) => setPixChave(evento.target.value)}
+            />
+            <CampoTexto
+              rotulo="Link de pagamento"
+              name="perfil-link-pagamento"
+              placeholder="https://..."
+              type="url"
+              value={linkPagamento}
+              onChange={(evento) => setLinkPagamento(evento.target.value)}
+            />
+          </div>
+          <label className="mt-3 block">
+            <span className="text-sm font-medium text-slate-800">Instruções de pagamento</span>
+            <textarea
+              className="mt-2 min-h-24 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
+              value={instrucoesPagamento}
+              onChange={(evento) => setInstrucoesPagamento(evento.target.value)}
+              maxLength={1000}
+              placeholder="Ex.: envie o comprovante pelo WhatsApp após o pagamento."
+            />
+          </label>
         </div>
 
         {erro ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p> : null}

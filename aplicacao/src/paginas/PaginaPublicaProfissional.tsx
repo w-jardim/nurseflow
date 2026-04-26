@@ -206,6 +206,36 @@ export function PaginaPublicaProfissional() {
           </section>
         </div>
 
+        {pagina.pixChave || pagina.linkPagamento || pagina.instrucoesPagamento ? (
+          <section className="mt-10 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-xl font-semibold">Pagamento direto ao profissional</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {pagina.pixChave ? (
+                <div className="rounded-md border border-slate-200 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">PIX</p>
+                  <p className="mt-1 break-all text-sm font-semibold text-slate-800">{pagina.pixChave}</p>
+                </div>
+              ) : null}
+              {pagina.linkPagamento ? (
+                <a
+                  className="flex min-h-20 flex-col justify-center rounded-md border border-primario p-3 text-primario transition hover:bg-teal-50"
+                  href={pagina.linkPagamento}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide">Link de pagamento</span>
+                  <span className="mt-1 text-sm font-semibold">Abrir em nova aba</span>
+                </a>
+              ) : null}
+            </div>
+            {pagina.instrucoesPagamento ? (
+              <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-700">
+                {pagina.instrucoesPagamento}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
         <section className="mt-10 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>

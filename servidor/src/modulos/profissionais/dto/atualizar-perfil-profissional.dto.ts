@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, IsUrl, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class AtualizarPerfilProfissionalDto {
   @IsOptional()
@@ -30,4 +30,19 @@ export class AtualizarPerfilProfissionalDto {
   @IsString()
   @MaxLength(40)
   conselho?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  pixChave?: string;
+
+  @IsOptional()
+  @IsUrl({ require_protocol: true }, { message: 'Informe um link de pagamento completo, começando com http:// ou https://.' })
+  @MaxLength(500)
+  linkPagamento?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  instrucoesPagamento?: string;
 }

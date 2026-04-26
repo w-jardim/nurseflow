@@ -10,6 +10,9 @@ const PERFIL_PRIVADO_SELECT = {
   bio: true,
   telefone: true,
   conselho: true,
+  pixChave: true,
+  linkPagamento: true,
+  instrucoesPagamento: true,
   plano: true,
   statusAssinatura: true,
   criadoEm: true,
@@ -22,6 +25,9 @@ const PERFIL_PUBLICO_SELECT = {
   bio: true,
   telefone: true,
   conselho: true,
+  pixChave: true,
+  linkPagamento: true,
+  instrucoesPagamento: true,
   cursos: {
     where: {
       status: StatusCurso.PUBLICADO,
@@ -85,6 +91,9 @@ export class ProfissionaisServico {
           bio: dados.bio?.trim() || null,
           telefone: dados.telefone?.trim() || null,
           conselho: dados.conselho?.trim() || null,
+          pixChave: dados.pixChave?.trim() || null,
+          linkPagamento: dados.linkPagamento?.trim() || null,
+          instrucoesPagamento: dados.instrucoesPagamento?.trim() || null,
         },
         select: PERFIL_PRIVADO_SELECT,
       });

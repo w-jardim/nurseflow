@@ -8,6 +8,9 @@ export type PerfilProfissional = {
   bio: string | null;
   telefone: string | null;
   conselho: string | null;
+  pixChave: string | null;
+  linkPagamento: string | null;
+  instrucoesPagamento: string | null;
   plano: string;
   statusAssinatura: string;
   criadoEm: string;
@@ -20,6 +23,9 @@ export type PaginaPublicaProfissional = {
   bio: string | null;
   telefone: string | null;
   conselho: string | null;
+  pixChave: string | null;
+  linkPagamento: string | null;
+  instrucoesPagamento: string | null;
   cursos: Array<{
     id: string;
     titulo: string;
