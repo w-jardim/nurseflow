@@ -86,8 +86,9 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
           required
         />
         <CampoTexto
-          rotulo="Slug"
+          rotulo="Endereço do curso na página"
           name="curso-slug"
+          placeholder="primeiros-socorros"
           value={slug}
           onChange={(evento) => setSlug(gerarSlug(evento.target.value))}
           required
@@ -145,7 +146,7 @@ export function PainelCursos({ cursos, aoCriar }: PainelCursosProps) {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-medium">{curso.titulo}</p>
-                    <p className="mt-1 text-sm text-slate-600">/{curso.slug}</p>
+                    <p className="mt-1 text-sm text-slate-600">Página: /{curso.slug}</p>
                   </div>
                   <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
                     {curso.status === 'PUBLICADO' ? 'Publicado' : 'Rascunho'}

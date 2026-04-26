@@ -76,7 +76,7 @@ export class AutenticacaoServico {
       };
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
-        throw new ConflictException('E-mail ou slug já está em uso.');
+        throw new ConflictException('E-mail ou endereço da página já está em uso.');
       }
 
       throw erro;

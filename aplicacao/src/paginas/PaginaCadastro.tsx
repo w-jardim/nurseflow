@@ -58,7 +58,7 @@ export function PaginaCadastro() {
         required
       />
       <CampoTexto
-        rotulo="Slug da página"
+        rotulo="Endereço da sua página"
         name="slug"
         placeholder="profissional-saude"
         value={slug}

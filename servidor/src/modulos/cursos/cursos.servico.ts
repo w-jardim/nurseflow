@@ -53,7 +53,7 @@ export class CursosServico {
       });
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
-        throw new ConflictException('Slug de curso já cadastrado para este profissional.');
+        throw new ConflictException('Endereço do curso já cadastrado para este profissional.');
       }
 
       throw erro;
