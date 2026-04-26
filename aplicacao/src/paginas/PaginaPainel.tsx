@@ -47,7 +47,7 @@ export function PaginaPainel() {
 
       <section className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-sm font-semibold uppercase tracking-wide text-primario">Painel</p>
-        <h1 className="mt-3 text-3xl font-bold">Bem-vinda, {usuario?.nome}</h1>
+        <h1 className="mt-3 text-3xl font-bold">Ola, {usuario?.nome}</h1>
         <p className="mt-2 text-slate-700">
           Sessao autenticada como {usuario?.papel}. Tenant atual: {usuario?.profissionalId}.
         </p>

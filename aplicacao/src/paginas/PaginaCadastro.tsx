@@ -60,7 +60,7 @@ export function PaginaCadastro() {
       <CampoTexto
         rotulo="Slug da pagina"
         name="slug"
-        placeholder="maria-enfermeira"
+        placeholder="profissional-saude"
         value={slug}
         onChange={(evento) => setSlug(evento.target.value.toLowerCase())}
         required
