@@ -10,6 +10,7 @@ Primeira fatia implementada:
 - Login com JWT de curta duracao
 - Endpoint autenticado para consultar a sessao atual
 - Base para guards, contexto de usuario e tenant por requisicao
+- Telas frontend para login, cadastro e painel autenticado
 
 ## Endpoints
 
@@ -17,6 +18,14 @@ Primeira fatia implementada:
 POST /autenticacao/cadastro-profissional
 POST /autenticacao/login
 GET /autenticacao/me
+```
+
+## Rotas frontend
+
+```text
+/autenticacao/login
+/autenticacao/cadastro
+/painel
 ```
 
 ## Proximas fatias

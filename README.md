@@ -62,6 +62,15 @@ POST /autenticacao/login
 GET  /autenticacao/me
 ```
 
+## Rotas iniciais da aplicacao
+
+```text
+/                         # apresentacao inicial
+/autenticacao/login       # login do profissional
+/autenticacao/cadastro    # cadastro do profissional
+/painel                   # sessao autenticada
+```
+
 ## Status
 
 Fase 0 iniciada:
