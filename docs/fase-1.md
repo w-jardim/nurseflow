@@ -23,6 +23,7 @@ Primeira fatia implementada:
 - Agenda inicial de atendimentos vinculada a pacientes do profissional
 - Trilha de auditoria básica para ações do profissional
 - RBAC básico com rotas privadas do profissional protegidas por papel
+- Decisão financeira do MVP: NurseFlow cobra apenas assinatura SaaS; cursos e atendimentos são recebidos diretamente pelo profissional
 
 ## Endpoints
 
@@ -49,6 +50,8 @@ GET /interesses
 GET /consultas
 POST /consultas
 GET /auditoria
+POST /pagamentos/assinatura
+GET /pagamentos/assinatura
 ```
 
 ## Rotas frontend
@@ -67,3 +70,5 @@ GET /auditoria
 - Recuperação de senha
 - Melhorias de auditoria com filtros e detalhes de segurança
 - Painel Super Admin inicial
+- Configuração de recebimento direto do profissional (PIX/link/checkout externo)
+- Fluxo operacional para liberar inscrição após confirmação de pagamento externo

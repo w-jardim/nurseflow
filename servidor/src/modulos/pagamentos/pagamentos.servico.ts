@@ -1,11 +1,11 @@
 import {
   BadRequestException,
   Injectable,
-  ServiceUnavailableException,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PlanoProfissional, StatusAssinatura, StatusPagamento } from '@prisma/client';
+import { PlanoProfissional, StatusAssinatura } from '@prisma/client';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
 
 const VALORES_PLANO: Record<PlanoProfissional, number> = {
@@ -14,22 +14,11 @@ const VALORES_PLANO: Record<PlanoProfissional, number> = {
   STANDARD: 14990,
 };
 
-const TAXA_PLATAFORMA = 0.05;
 const MERCADO_PAGO_API = 'https://api.mercadopago.com';
 
 type MercadoPagoAssinatura = {
   id?: string;
   init_point?: string;
-  status?: string;
-};
-
-type MercadoPagoPreferencia = {
-  id?: string;
-  init_point?: string;
-};
-
-type MercadoPagoPagamento = {
-  external_reference?: string;
   status?: string;
 };
 
@@ -84,115 +73,9 @@ export class PagamentosServico {
     return { urlPagamento: resultado.init_point, referencia: resultado.id };
   }
 
-  async criarPagamentoCurso(profissionalId: string, cursoId: string, alunoId: string) {
-    this.validarMercadoPagoConfigurado();
-
-    const [curso, aluno] = await Promise.all([
-      this.prisma.curso.findFirst({
-        where: { id: cursoId, profissionalId, excluidoEm: null },
-      }),
-      this.prisma.aluno.findFirst({
-        where: { id: alunoId, profissionalId, excluidoEm: null },
-        include: { usuario: true },
-      }),
-    ]);
-
-    if (!curso) throw new NotFoundException('Curso não encontrado.');
-    if (!aluno) throw new NotFoundException('Aluno não encontrado.');
-
-    const jaInscrito = await this.prisma.inscricaoCurso.findUnique({
-      where: { cursoId_alunoId: { cursoId, alunoId } },
-    });
-    if (jaInscrito) throw new BadRequestException('Aluno já está inscrito neste curso.');
-
-    if (curso.precoCentavos === 0) {
-      const inscricao = await this.prisma.inscricaoCurso.create({
-        data: { profissionalId, cursoId, alunoId },
-      });
-      return { gratuito: true, inscricaoId: inscricao.id };
-    }
-
-    const taxaCentavos = Math.round(curso.precoCentavos * TAXA_PLATAFORMA);
-
-    const transacao = await this.prisma.transacao.create({
-      data: {
-        profissionalId,
-        valorCentavos: curso.precoCentavos,
-        taxaPlataformaCentavos: taxaCentavos,
-        status: StatusPagamento.PENDENTE,
-      },
-    });
-
-    const baseUrl = this.config.get('APLICACAO_URL', 'http://localhost:5173');
-
-    const resultado = await this.requisitarMercadoPago<MercadoPagoPreferencia>(
-      '/checkout/preferences',
-      {
-        method: 'POST',
-        items: [
-          {
-            id: cursoId,
-            title: curso.titulo,
-            quantity: 1,
-            unit_price: curso.precoCentavos / 100,
-            currency_id: 'BRL',
-          },
-        ],
-        payer: aluno.email
-          ? { email: aluno.email }
-          : undefined,
-        external_reference: transacao.id,
-        notification_url: `${this.config.get('APLICACAO_URL', 'http://localhost:3000')}/webhooks/mercadopago`,
-        back_urls: {
-          success: `${baseUrl}/cursos/${cursoId}/sucesso`,
-          failure: `${baseUrl}/cursos/${cursoId}/falha`,
-          pending: `${baseUrl}/cursos/${cursoId}/pendente`,
-        },
-        auto_return: 'approved',
-      },
-    );
-
-    await this.prisma.transacao.update({
-      where: { id: transacao.id },
-      data: { mercadoPagoReferencia: resultado.id },
-    });
-
-    return { urlPagamento: resultado.init_point, transacaoId: transacao.id };
-  }
-
   async processarWebhook(tipo: string, dados: Record<string, unknown>) {
-    if (tipo === 'payment') {
-      await this.processarPagamento(this.extrairIdEvento(dados));
-    } else if (tipo === 'subscription_preapproval') {
+    if (tipo === 'subscription_preapproval') {
       await this.processarAssinatura(this.extrairIdEvento(dados));
-    }
-  }
-
-  private async processarPagamento(pagamentoId: string) {
-    const pagamento = await this.requisitarMercadoPago<MercadoPagoPagamento>(
-      `/v1/payments/${pagamentoId}`,
-    );
-
-    const transacaoId = pagamento.external_reference;
-    if (!transacaoId) return;
-
-    const status = this.mapearStatusPagamento(pagamento.status ?? '');
-
-    await this.prisma.transacao.update({
-      where: { id: transacaoId },
-      data: { status },
-    });
-
-    if (status === StatusPagamento.APROVADO) {
-      const transacao = await this.prisma.transacao.findUnique({
-        where: { id: transacaoId },
-        include: { inscricao: true },
-      });
-      if (transacao && !transacao.inscricao) {
-        // Cria inscrição automaticamente após pagamento aprovado
-        // O cursoId e alunoId precisam estar na transação - busca via preferência
-        // Neste ponto aguardamos o webhook conter os dados necessários
-      }
     }
   }
 
@@ -230,16 +113,6 @@ export class PagamentosServico {
         },
       }),
     ]);
-  }
-
-  private mapearStatusPagamento(status: string): StatusPagamento {
-    const mapa: Record<string, StatusPagamento> = {
-      approved: StatusPagamento.APROVADO,
-      rejected: StatusPagamento.RECUSADO,
-      refunded: StatusPagamento.ESTORNADO,
-      charged_back: StatusPagamento.ESTORNADO,
-    };
-    return mapa[status] ?? StatusPagamento.PENDENTE;
   }
 
   private extrairIdEvento(dados: Record<string, unknown>) {

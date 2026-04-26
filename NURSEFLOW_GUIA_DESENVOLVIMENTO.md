@@ -20,8 +20,9 @@ numbersections: true
 ## Modelo de Negócio
 
 - **Profissional assina um plano SaaS:** R$ 79,90/mês (Pro) ou R$ 149,90/mês (Standard)
-- **NurseFlow retém 5%** das transações dos cursos (split payment via Mercado Pago)
-- **Resultado:** Receita recorrente + comissão por transação
+- **NurseFlow cobra apenas a assinatura SaaS**
+- **Cursos e atendimentos são propriedade do profissional:** pagamentos de alunos/pacientes vão direto para a conta do profissional
+- **Resultado:** receita recorrente previsível, sem custódia ou repasse financeiro pela NurseFlow no MVP
 
 ## Stack Tecnológico
 
@@ -85,17 +86,13 @@ Standard:  R$ 149,90/mês
 Gratuito:  R$ 0/mês
 ```
 
-**2. Split Payment (Comissão por Transação)**
+**2. Recebimentos do Profissional (Direto)**
 ```
 Aluno paga R$ 100 por curso
          ↓
-Mercado Pago cobra 2% = R$ 2
+Pagamento vai para a conta/chave/link configurado pelo profissional
          ↓
-NurseFlow retém 5% = R$ 5
-         ↓
-Profissional recebe = R$ 93
-         ↓
-Cai na conta em 1-2 dias
+NurseFlow não retém comissão e não faz repasse
 ```
 
 ### Projeção de Receita (Ano 1)
@@ -104,8 +101,7 @@ Cai na conta em 1-2 dias
 Cenário Conservador:
 - 50 profissionais Pro @ R$ 79,90 = R$ 4.000/mês
 - 20 profissionais Standard @ R$ 149,90 = R$ 3.000/mês
-- Split (100 cursos/mês @ R$ 100 médio) = R$ 500/mês
-Total: R$ 7.500/mês = R$ 90.000/ano
+Total: R$ 7.000/mês = R$ 84.000/ano
 ```
 
 ---
@@ -167,7 +163,7 @@ Docker + Docker Compose (desenvolvimento)
 
 | Serviço | Uso | Custo |
 |---------|-----|-------|
-| Mercado Pago | Pagamentos SaaS + Marketplace | 2% + taxa fixa |
+| Mercado Pago | Assinaturas SaaS da NurseFlow | 2% + taxa fixa |
 | Resend | E-mails transacionais | Grátis até 100/dia |
 | Z-API | WhatsApp (lembretes) | ~R$ 200-500/mês |
 | Cloudflare Stream | Hospedagem de vídeos | $5 até 5GB |
@@ -437,18 +433,18 @@ Fund.   MVP       Monetiz.   Crescimento    Escala
 - ✅ Pagamento recorrente ativo
 - ✅ Gerenciamento de planos
 
-### Sprint 08 — Recebimentos do Profissional
+### Sprint 08 — Recebimentos Diretos do Profissional
 
 **Tarefas:**
-- Mercado Pago Marketplace (split)
-- Vinculação de conta bancária
-- Checkout seguro
-- Histórico financeiro
-- Extrato de transações
+- Configuração de PIX/link de pagamento do profissional
+- Orientação clara de que a venda é realizada pelo profissional
+- Registro manual/assistido de inscrição após confirmação externa
+- Histórico operacional de vendas do profissional
+- Preparar evolução futura para integrações diretas por profissional
 
 **Entregáveis:**
-- ✅ Profissional recebendo
-- ✅ Receita sendo gerada
+- ✅ Profissional recebendo diretamente
+- ✅ NurseFlow sem custódia nem repasse de valores de cursos
 
 ### Sprint 09 — Painel Super Admin
 
@@ -802,22 +798,18 @@ CREATE TABLE alunos (
 - Após 7 dias: rebaixa para Free automaticamente
 - E-mail informando falha
 
-## 9.2 Profissional Recebe dos Alunos (Split Payment)
+## 9.2 Profissional Recebe dos Alunos (Pagamento Direto)
 
 ```
 Aluno compra curso de R$ 100
          ↓
-Mercado Pago processa (PCI seguro)
+Aluno paga pelo PIX/link/checkout do profissional
          ↓
-Mercado Pago cobra 2% de taxa = R$ 2
+Dinheiro entra diretamente na conta do profissional
          ↓
-NurseFlow retém 5% = R$ 5
+Profissional confirma/libera acesso no NurseFlow
          ↓
-Profissional recebe 93% = R$ 93
-         ↓
-Cai na conta bancária/PIX em 1-2 dias
-         ↓
-Profissional vê no dashboard ("Últimas transações")
+NurseFlow registra a inscrição, mas não intermedia o dinheiro
 ```
 
 ## 9.3 Fluxo de Checkout

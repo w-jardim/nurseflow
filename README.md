@@ -1,6 +1,13 @@
 # NurseFlow
 
-Plataforma SaaS para profissionais de saúde criarem páginas públicas, venderem cursos, gerenciarem alunos/pacientes e organizarem atendimentos.
+Plataforma SaaS para profissionais de saúde criarem páginas públicas, divulgarem cursos, gerenciarem alunos/pacientes e organizarem atendimentos.
+
+## Modelo financeiro
+
+- A NurseFlow cobra apenas a assinatura mensal do profissional.
+- Cursos e atendimentos pertencem ao profissional.
+- Pagamentos de alunos e pacientes são feitos diretamente ao profissional, fora da custódia da NurseFlow.
+- Split/marketplace fica fora do MVP.
 
 ## Stack
 

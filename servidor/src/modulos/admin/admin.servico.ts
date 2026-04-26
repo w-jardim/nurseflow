@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PlanoProfissional, StatusAssinatura, StatusPagamento } from '@prisma/client';
+import { PlanoProfissional, StatusAssinatura } from '@prisma/client';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
 
 const MRR_POR_PLANO: Record<PlanoProfissional, number> = {
   GRATUITO: 0,
-  PRO: 9700,
-  STANDARD: 19700,
+  PRO: 7990,
+  STANDARD: 14990,
 };
 
 @Injectable()
@@ -23,7 +23,6 @@ export class AdminServico {
       assinaturasAtivas,
       assinaturasCanceladas30Dias,
       totalAssinaturas,
-      transacoesAprovadas,
       novosUsuarios30Dias,
       totalProfissionais,
       totalAlunos,
@@ -46,11 +45,6 @@ export class AdminServico {
 
       this.prisma.assinatura.count({
         where: { criadoEm: { lt: inicio30Dias } },
-      }),
-
-      this.prisma.transacao.aggregate({
-        _sum: { valorCentavos: true, taxaPlataformaCentavos: true },
-        where: { status: StatusPagamento.APROVADO },
       }),
 
       this.prisma.usuario.count({
@@ -86,8 +80,6 @@ export class AdminServico {
       receita: {
         mrrCentavos: mrr,
         arrCentavos: mrr * 12,
-        volumeTransacoesCentavos: transacoesAprovadas._sum.valorCentavos ?? 0,
-        taxaPlataformaCentavos: transacoesAprovadas._sum.taxaPlataformaCentavos ?? 0,
       },
       assinaturas: {
         churnRate30Dias: churnRate,
@@ -153,17 +145,8 @@ export class AdminServico {
 
     if (!profissional) return null;
 
-    const receita = await this.prisma.transacao.aggregate({
-      _sum: { valorCentavos: true, taxaPlataformaCentavos: true },
-      where: { profissionalId, status: StatusPagamento.APROVADO },
-    });
-
     return {
       ...profissional,
-      receita: {
-        totalCentavos: receita._sum.valorCentavos ?? 0,
-        taxaPlataformaCentavos: receita._sum.taxaPlataformaCentavos ?? 0,
-      },
     };
   }
 }

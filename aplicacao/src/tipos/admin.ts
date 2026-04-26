@@ -2,8 +2,6 @@ export type MetricasAdmin = {
   receita: {
     mrrCentavos: number;
     arrCentavos: number;
-    volumeTransacoesCentavos: number;
-    taxaPlataformaCentavos: number;
   };
   assinaturas: {
     churnRate30Dias: number;

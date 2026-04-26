@@ -80,14 +80,21 @@ export function PaginaAdminMetricas() {
             sub="Receita anual recorrente"
           />
           <CardMetrica
-            rotulo="Volume transações"
-            valor={formatarReais(metricas.receita.volumeTransacoesCentavos)}
-            sub="Total aprovado"
+            rotulo="Profissionais pagos"
+            valor={String(metricas.profissionais.porPlano.PRO + metricas.profissionais.porPlano.STANDARD)}
+            sub="Planos Pro e Standard"
           />
           <CardMetrica
-            rotulo="Taxa plataforma"
-            valor={formatarReais(metricas.receita.taxaPlataformaCentavos)}
-            sub="10% das transações"
+            rotulo="Ticket SaaS médio"
+            valor={formatarReais(
+              metricas.profissionais.porPlano.PRO + metricas.profissionais.porPlano.STANDARD > 0
+                ? Math.round(
+                    metricas.receita.mrrCentavos /
+                      (metricas.profissionais.porPlano.PRO + metricas.profissionais.porPlano.STANDARD),
+                  )
+                : 0,
+            )}
+            sub="Sem comissão sobre cursos"
           />
         </div>
       </div>
