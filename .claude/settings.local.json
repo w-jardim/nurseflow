@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout *)",
+      "Bash(git ls-tree *)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|prisma\\)$\")",
+      "Bash(git merge *)",
+      "Bash(npm install *)",
+      "Bash(git add *)"
+    ]
+  }
+}
