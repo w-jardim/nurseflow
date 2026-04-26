@@ -12,6 +12,7 @@ Primeira fatia implementada:
 - Base para guards, contexto de usuário e tenant por requisição
 - Telas frontend para login, cadastro e painel autenticado
 - CRUD inicial de alunos e pacientes com isolamento por tenant
+- CRUD inicial de cursos com isolamento por tenant
 
 ## Endpoints
 
@@ -23,6 +24,8 @@ GET /alunos
 POST /alunos
 GET /pacientes
 POST /pacientes
+GET /cursos
+POST /cursos
 ```
 
 ## Rotas frontend

@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PainelContatos } from '../componentes/PainelContatos';
+import { PainelCursos } from '../componentes/PainelCursos';
 import { requisitarApi } from '../servicos/api';
 import { limparToken } from '../servicos/sessao';
 import type { Usuario } from '../tipos/autenticacao';
 import type { Contato } from '../tipos/contatos';
+import type { Curso, StatusCurso } from '../tipos/cursos';
 
 export function PaginaPainel() {
   const navegar = useNavigate();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [alunos, setAlunos] = useState<Contato[]>([]);
   const [pacientes, setPacientes] = useState<Contato[]>([]);
+  const [cursos, setCursos] = useState<Curso[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -18,11 +21,13 @@ export function PaginaPainel() {
       requisitarApi<{ usuario: Usuario }>('/autenticacao/me', { autenticada: true }),
       requisitarApi<Contato[]>('/alunos', { autenticada: true }),
       requisitarApi<Contato[]>('/pacientes', { autenticada: true }),
+      requisitarApi<Curso[]>('/cursos', { autenticada: true }),
     ])
-      .then(([sessao, listaAlunos, listaPacientes]) => {
+      .then(([sessao, listaAlunos, listaPacientes, listaCursos]) => {
         setUsuario(sessao.usuario);
         setAlunos(listaAlunos);
         setPacientes(listaPacientes);
+        setCursos(listaCursos);
       })
       .catch(() => {
         limparToken();
@@ -99,6 +104,27 @@ export function PaginaPainel() {
     setPacientes((atuais) => [paciente, ...atuais]);
   }
 
+  async function criarCurso(dados: {
+    titulo: string;
+    slug: string;
+    descricao: string;
+    precoCentavos: number;
+    status: StatusCurso;
+  }) {
+    const curso = await requisitarApi<Curso>('/cursos', {
+      metodo: 'POST',
+      autenticada: true,
+      corpo: {
+        titulo: dados.titulo,
+        slug: dados.slug,
+        descricao: dados.descricao || undefined,
+        precoCentavos: dados.precoCentavos,
+        status: dados.status,
+      },
+    });
+    setCursos((atuais) => [curso, ...atuais]);
+  }
+
   if (carregando) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-50 text-slate-700">
@@ -144,9 +170,8 @@ export function PaginaPainel() {
           />
         </div>
 
-        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">Cursos</h2>
-          <p className="mt-2 text-sm text-slate-600">Módulo preparado para a próxima fatia da Fase 1.</p>
+        <div className="mt-4">
+          <PainelCursos cursos={cursos} aoCriar={criarCurso} />
         </div>
       </section>
     </main>

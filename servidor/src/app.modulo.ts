@@ -6,6 +6,7 @@ import { PrismaModulo } from './comum/prisma/prisma.modulo';
 import { TenantInterceptor } from './comum/interceptadores/tenant.interceptor';
 import { AlunosModulo } from './modulos/alunos/alunos.modulo';
 import { AutenticacaoModulo } from './modulos/autenticacao/autenticacao.modulo';
+import { CursosModulo } from './modulos/cursos/cursos.modulo';
 import { PacientesModulo } from './modulos/pacientes/pacientes.modulo';
 
 @Module({
@@ -17,6 +18,7 @@ import { PacientesModulo } from './modulos/pacientes/pacientes.modulo';
     AutenticacaoModulo,
     AlunosModulo,
     PacientesModulo,
+    CursosModulo,
   ],
   controllers: [AppControlador],
   providers: [
