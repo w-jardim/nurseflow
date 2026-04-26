@@ -53,6 +53,15 @@ npm run prisma:generate  # gera Prisma Client
 npm run prisma:migrate   # executa migrations locais
 ```
 
+## Endpoints iniciais
+
+```text
+GET  /saude
+POST /autenticacao/cadastro-profissional
+POST /autenticacao/login
+GET  /autenticacao/me
+```
+
 ## Status
 
 Fase 0 iniciada:
