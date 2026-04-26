@@ -47,16 +47,16 @@ export function PaginaPainel() {
 
       <section className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-sm font-semibold uppercase tracking-wide text-primario">Painel</p>
-        <h1 className="mt-3 text-3xl font-bold">Ola, {usuario?.nome}</h1>
+        <h1 className="mt-3 text-3xl font-bold">Olá, {usuario?.nome}</h1>
         <p className="mt-2 text-slate-700">
-          Sessao autenticada como {usuario?.papel}. Tenant atual: {usuario?.profissionalId}.
+          Sessão autenticada como {usuario?.papel}. Tenant atual: {usuario?.profissionalId}.
         </p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {['Alunos', 'Pacientes', 'Cursos'].map((item) => (
             <article key={item} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="font-semibold">{item}</h2>
-              <p className="mt-2 text-sm text-slate-600">Modulo preparado para a proxima fatia da Fase 1.</p>
+              <p className="mt-2 text-sm text-slate-600">Módulo preparado para a próxima fatia da Fase 1.</p>
             </article>
           ))}
         </div>

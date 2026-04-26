@@ -31,7 +31,7 @@ export class JwtEstrategia extends PassportStrategy(Strategy, 'jwt') {
     });
 
     if (!usuario || !usuario.ativo) {
-      throw new UnauthorizedException('Sessao invalida.');
+      throw new UnauthorizedException('Sessão inválida.');
     }
 
     return {

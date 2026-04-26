@@ -35,7 +35,7 @@ export async function requisitarApi<TResposta>(
 
   if (!resposta.ok) {
     const mensagem =
-      conteudo?.message ?? conteudo?.mensagem ?? 'Nao foi possivel concluir a operacao.';
+      conteudo?.message ?? conteudo?.mensagem ?? 'Não foi possível concluir a operação.';
     throw new Error(Array.isArray(mensagem) ? mensagem.join(', ') : mensagem);
   }
 

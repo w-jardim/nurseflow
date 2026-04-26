@@ -26,7 +26,7 @@ export function PaginaLogin() {
       salvarToken(resposta.acesso.token);
       navegar('/painel');
     } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Nao foi possivel entrar.');
+      setErro(error instanceof Error ? error.message : 'Não foi possível entrar.');
     } finally {
       setEnviando(false);
     }
@@ -69,7 +69,7 @@ export function PaginaLogin() {
       </button>
 
       <p className="text-center text-sm text-slate-600">
-        Ainda nao tem conta?{' '}
+        Ainda não tem conta?{' '}
         <Link className="font-semibold text-primario" to="/autenticacao/cadastro">
           Criar conta
         </Link>

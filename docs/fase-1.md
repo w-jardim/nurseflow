@@ -1,15 +1,15 @@
 # Fase 1 - MVP inicial
 
-Objetivo: transformar a fundacao tecnica em uma plataforma utilizavel por profissionais.
+Objetivo: transformar a fundação técnica em uma plataforma utilizável por profissionais.
 
-## Sprint 03 - Autenticacao e Multi-Tenant
+## Sprint 03 - Autenticação e Multi-Tenant
 
 Primeira fatia implementada:
 
-- Cadastro de profissional com criacao automatica de tenant
-- Login com JWT de curta duracao
-- Endpoint autenticado para consultar a sessao atual
-- Base para guards, contexto de usuario e tenant por requisicao
+- Cadastro de profissional com criação automática de tenant
+- Login com JWT de curta duração
+- Endpoint autenticado para consultar a sessão atual
+- Base para guards, contexto de usuário e tenant por requisição
 - Telas frontend para login, cadastro e painel autenticado
 
 ## Endpoints
@@ -32,5 +32,5 @@ GET /autenticacao/me
 
 - Refresh token persistido em Redis
 - 2FA para Super Admin
-- Decorador de papeis e RBAC em rotas
+- Decorador de papéis e RBAC em rotas
 - CRUD de alunos e pacientes filtrado por `profissionalId`

@@ -12,7 +12,7 @@ export function LayoutAutenticacao() {
             Acesse sua central profissional.
           </h1>
           <p className="mt-5 max-w-xl text-lg text-slate-700">
-            Entre para gerenciar cursos, pacientes, alunos e atendimentos em uma unica base.
+            Entre para gerenciar cursos, pacientes, alunos e atendimentos em uma única base.
           </p>
         </section>
 

@@ -28,7 +28,7 @@ export function PaginaCadastro() {
       salvarToken(resposta.acesso.token);
       navegar('/painel');
     } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Nao foi possivel criar sua conta.');
+      setErro(error instanceof Error ? error.message : 'Não foi possível criar sua conta.');
     } finally {
       setEnviando(false);
     }
@@ -58,7 +58,7 @@ export function PaginaCadastro() {
         required
       />
       <CampoTexto
-        rotulo="Slug da pagina"
+        rotulo="Slug da página"
         name="slug"
         placeholder="profissional-saude"
         value={slug}
@@ -86,7 +86,7 @@ export function PaginaCadastro() {
       </button>
 
       <p className="text-center text-sm text-slate-600">
-        Ja tem conta?{' '}
+        Já tem conta?{' '}
         <Link className="font-semibold text-primario" to="/autenticacao/login">
           Entrar
         </Link>

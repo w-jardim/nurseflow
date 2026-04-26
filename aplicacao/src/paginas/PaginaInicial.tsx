@@ -2,9 +2,9 @@ import { limitesPorPlano } from '@nurseflow/compartilhado';
 import { Link } from 'react-router-dom';
 
 const recursos = [
-  'Paginas publicas para profissionais',
-  'Gestao de alunos e pacientes',
-  'Cursos, agenda e pagamentos em uma unica base',
+  'Páginas públicas para profissionais',
+  'Gestão de alunos e pacientes',
+  'Cursos, agenda e pagamentos em uma única base',
 ];
 
 export function PaginaInicial() {
@@ -27,10 +27,10 @@ export function PaginaInicial() {
         </div>
 
         <h1 className="mt-10 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl">
-          SaaS para profissionais de saude venderem, atenderem e crescerem.
+          SaaS para profissionais de saúde venderem, atenderem e crescerem.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-slate-700">
-          Fundacao tecnica da plataforma criada com React, NestJS, Prisma, PostgreSQL e Redis.
+          Fundação técnica da plataforma criada com React, NestJS, Prisma, PostgreSQL e Redis.
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">

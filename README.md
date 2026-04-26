@@ -1,6 +1,6 @@
 # NurseFlow
 
-Plataforma SaaS para profissionais de saude criarem paginas publicas, venderem cursos, gerenciarem alunos/pacientes e organizarem atendimentos.
+Plataforma SaaS para profissionais de saúde criarem páginas públicas, venderem cursos, gerenciarem alunos/pacientes e organizarem atendimentos.
 
 ## Stack
 
@@ -45,7 +45,7 @@ Servicos:
 ## Scripts principais
 
 ```bash
-npm run dev              # inicia aplicacao e servidor
+npm run dev              # inicia aplicação e servidor
 npm run build            # build de todos os pacotes
 npm run lint             # lint de todos os pacotes
 npm run typecheck        # checagem TypeScript
@@ -62,13 +62,13 @@ POST /autenticacao/login
 GET  /autenticacao/me
 ```
 
-## Rotas iniciais da aplicacao
+## Rotas iniciais da aplicação
 
 ```text
-/                         # apresentacao inicial
+/                         # apresentação inicial
 /autenticacao/login       # login do profissional
 /autenticacao/cadastro    # cadastro do profissional
-/painel                   # sessao autenticada
+/painel                   # sessão autenticada
 ```
 
 ## Status

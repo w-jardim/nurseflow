@@ -76,7 +76,7 @@ export class AutenticacaoServico {
       };
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
-        throw new ConflictException('E-mail ou slug ja esta em uso.');
+        throw new ConflictException('E-mail ou slug já está em uso.');
       }
 
       throw erro;
@@ -91,13 +91,13 @@ export class AutenticacaoServico {
     });
 
     if (!usuario || !usuario.ativo) {
-      throw new UnauthorizedException('Credenciais invalidas.');
+      throw new UnauthorizedException('Credenciais inválidas.');
     }
 
     const senhaValida = await bcrypt.compare(dados.senha, usuario.senhaHash);
 
     if (!senhaValida) {
-      throw new UnauthorizedException('Credenciais invalidas.');
+      throw new UnauthorizedException('Credenciais inválidas.');
     }
 
     await this.prisma.usuario.update({

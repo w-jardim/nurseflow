@@ -1,6 +1,6 @@
-# Fase 0 - Fundacao
+# Fase 0 - Fundação
 
-Objetivo: preparar a base tecnica do NurseFlow para desenvolvimento incremental.
+Objetivo: preparar a base técnica do NurseFlow para desenvolvimento incremental.
 
 ## Entregas
 
@@ -15,6 +15,6 @@ Objetivo: preparar a base tecnica do NurseFlow para desenvolvimento incremental.
 ## Proximas tarefas
 
 - Criar primeira migration Prisma
-- Implementar autenticacao JWT
+- Implementar autenticação JWT
 - Adicionar RBAC e isolamento por tenant
 - Criar CRUD inicial de profissionais, alunos e pacientes
