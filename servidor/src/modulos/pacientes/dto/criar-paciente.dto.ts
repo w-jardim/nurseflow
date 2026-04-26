@@ -1,5 +1,6 @@
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { limparCep } from '../../../comum/validadores/cep';
 import { limparCpf } from '../../../comum/validadores/cpf';
 
 export class CriarPacienteDto {
@@ -32,6 +33,40 @@ export class CriarPacienteDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(255)
-  endereco?: string;
+  @Transform(({ value }) => (typeof value === 'string' ? limparCep(value) : value))
+  @MinLength(8)
+  @MaxLength(8)
+  cep?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  logradouro?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  numero?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  complemento?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  bairro?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  cidade?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  @IsString()
+  @MinLength(2)
+  @MaxLength(2)
+  uf?: string;
 }

@@ -19,3 +19,9 @@ export function mascararTelefone(valor: string) {
 
   return digitos.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
 }
+
+export function mascararCep(valor: string) {
+  return apenasDigitos(valor)
+    .slice(0, 8)
+    .replace(/(\d{5})(\d)/, '$1-$2');
+}

@@ -42,7 +42,13 @@ export function PaginaPainel() {
     cpf: string;
     email: string;
     telefone: string;
-    endereco: string;
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
   }) {
     const aluno = await requisitarApi<Contato>('/alunos', {
       metodo: 'POST',
@@ -64,7 +70,13 @@ export function PaginaPainel() {
     cpf: string;
     email: string;
     telefone: string;
-    endereco: string;
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
   }) {
     const paciente = await requisitarApi<Contato>('/pacientes', {
       metodo: 'POST',
@@ -75,7 +87,13 @@ export function PaginaPainel() {
         cpf: dados.cpf,
         email: dados.email || undefined,
         telefone: dados.telefone || undefined,
-        endereco: dados.endereco || undefined,
+        cep: dados.cep || undefined,
+        logradouro: dados.logradouro || undefined,
+        numero: dados.numero || undefined,
+        complemento: dados.complemento || undefined,
+        bairro: dados.bairro || undefined,
+        cidade: dados.cidade || undefined,
+        uf: dados.uf || undefined,
       },
     });
     setPacientes((atuais) => [paciente, ...atuais]);

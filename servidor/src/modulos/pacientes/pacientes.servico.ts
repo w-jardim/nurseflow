@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
+import { cepValido } from '../../comum/validadores/cep';
 import { cpfValido } from '../../comum/validadores/cpf';
 import { CriarPacienteDto } from './dto/criar-paciente.dto';
 
@@ -24,7 +25,13 @@ export class PacientesServico {
         cpf: true,
         email: true,
         telefone: true,
-        endereco: true,
+        cep: true,
+        logradouro: true,
+        numero: true,
+        complemento: true,
+        bairro: true,
+        cidade: true,
+        uf: true,
         criadoEm: true,
       },
     });
@@ -33,6 +40,10 @@ export class PacientesServico {
   async criar(profissionalId: string, dados: CriarPacienteDto) {
     if (!cpfValido(dados.cpf)) {
       throw new BadRequestException('CPF inválido.');
+    }
+
+    if (dados.cep && !cepValido(dados.cep)) {
+      throw new BadRequestException('CEP inválido.');
     }
 
     try {
@@ -44,7 +55,13 @@ export class PacientesServico {
           cpf: dados.cpf,
           email: dados.email?.trim().toLowerCase() || null,
           telefone: dados.telefone?.trim() || null,
-          endereco: dados.endereco?.trim() || null,
+          cep: dados.cep || null,
+          logradouro: dados.logradouro?.trim() || null,
+          numero: dados.numero?.trim() || null,
+          complemento: dados.complemento?.trim() || null,
+          bairro: dados.bairro?.trim() || null,
+          cidade: dados.cidade?.trim() || null,
+          uf: dados.uf || null,
         },
         select: {
           id: true,
@@ -53,7 +70,13 @@ export class PacientesServico {
           cpf: true,
           email: true,
           telefone: true,
-          endereco: true,
+          cep: true,
+          logradouro: true,
+          numero: true,
+          complemento: true,
+          bairro: true,
+          cidade: true,
+          uf: true,
           criadoEm: true,
         },
       });

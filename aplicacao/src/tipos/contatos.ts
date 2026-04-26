@@ -5,6 +5,12 @@ export type Contato = {
   cpf: string | null;
   email: string | null;
   telefone: string | null;
-  endereco?: string | null;
+  cep?: string | null;
+  logradouro?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  uf?: string | null;
   criadoEm: string;
 };

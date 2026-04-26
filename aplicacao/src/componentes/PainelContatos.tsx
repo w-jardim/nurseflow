@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { CampoTexto } from './CampoTexto';
 import type { Contato } from '../tipos/contatos';
-import { mascararCpf, mascararTelefone } from '../utilitarios/mascaras';
+import { mascararCep, mascararCpf, mascararTelefone } from '../utilitarios/mascaras';
 
 type PainelContatosProps = {
   titulo: string;
@@ -15,7 +15,13 @@ type PainelContatosProps = {
     cpf: string;
     email: string;
     telefone: string;
-    endereco: string;
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
   }) => Promise<void>;
 };
 
@@ -32,7 +38,13 @@ export function PainelContatos({
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [endereco, setEndereco] = useState('');
+  const [cep, setCep] = useState('');
+  const [logradouro, setLogradouro] = useState('');
+  const [numero, setNumero] = useState('');
+  const [complemento, setComplemento] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [uf, setUf] = useState('');
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
@@ -42,13 +54,32 @@ export function PainelContatos({
     setEnviando(true);
 
     try {
-      await aoCriar({ nome, sobrenome, cpf, email, telefone, endereco });
+      await aoCriar({
+        nome,
+        sobrenome,
+        cpf,
+        email,
+        telefone,
+        cep,
+        logradouro,
+        numero,
+        complemento,
+        bairro,
+        cidade,
+        uf,
+      });
       setNome('');
       setSobrenome('');
       setCpf('');
       setEmail('');
       setTelefone('');
-      setEndereco('');
+      setCep('');
+      setLogradouro('');
+      setNumero('');
+      setComplemento('');
+      setBairro('');
+      setCidade('');
+      setUf('');
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Não foi possível salvar.');
     } finally {
@@ -104,13 +135,57 @@ export function PainelContatos({
           onChange={(evento) => setTelefone(mascararTelefone(evento.target.value))}
         />
         {coletarEndereco ? (
-          <CampoTexto
-            rotulo="Endereço do paciente"
-            name={`${titulo}-endereco`}
-            placeholder="Rua, número, bairro e cidade"
-            value={endereco}
-            onChange={(evento) => setEndereco(evento.target.value)}
-          />
+          <div className="grid gap-3 border-t border-slate-100 pt-3 sm:grid-cols-2">
+            <CampoTexto
+              rotulo="CEP"
+              name={`${titulo}-cep`}
+              inputMode="numeric"
+              placeholder="00000-000"
+              value={cep}
+              onChange={(evento) => setCep(mascararCep(evento.target.value))}
+            />
+            <CampoTexto
+              rotulo="UF"
+              name={`${titulo}-uf`}
+              placeholder="SP"
+              maxLength={2}
+              value={uf}
+              onChange={(evento) => setUf(evento.target.value.toUpperCase())}
+            />
+            <CampoTexto
+              rotulo="Logradouro"
+              name={`${titulo}-logradouro`}
+              placeholder="Rua, avenida ou praça"
+              value={logradouro}
+              onChange={(evento) => setLogradouro(evento.target.value)}
+            />
+            <CampoTexto
+              rotulo="Número"
+              name={`${titulo}-numero`}
+              value={numero}
+              onChange={(evento) => setNumero(evento.target.value)}
+            />
+            <CampoTexto
+              rotulo="Complemento"
+              name={`${titulo}-complemento`}
+              value={complemento}
+              onChange={(evento) => setComplemento(evento.target.value)}
+            />
+            <CampoTexto
+              rotulo="Bairro"
+              name={`${titulo}-bairro`}
+              value={bairro}
+              onChange={(evento) => setBairro(evento.target.value)}
+            />
+            <div className="sm:col-span-2">
+              <CampoTexto
+                rotulo="Cidade"
+                name={`${titulo}-cidade`}
+                value={cidade}
+                onChange={(evento) => setCidade(evento.target.value)}
+              />
+            </div>
+          </div>
         ) : null}
 
         {erro ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p> : null}
@@ -143,7 +218,21 @@ export function PainelContatos({
                     .filter(Boolean)
                     .join(' · ') || 'Sem contato informado'}
                 </p>
-                {contato.endereco ? <p className="mt-1 text-sm text-slate-600">{contato.endereco}</p> : null}
+                {coletarEndereco && contato.cep ? (
+                  <p className="mt-1 text-sm text-slate-600">
+                    {[
+                      contato.logradouro,
+                      contato.numero,
+                      contato.complemento,
+                      contato.bairro,
+                      contato.cidade,
+                      contato.uf,
+                      contato.cep ? mascararCep(contato.cep) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>
