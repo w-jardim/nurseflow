@@ -21,6 +21,7 @@ describe('CursosServico', () => {
     aulaCurso: {
       count: jest.fn(),
       create: jest.fn(),
+      findFirst: jest.fn(),
     },
     aluno: {
       findFirst: jest.fn(),
@@ -30,9 +31,14 @@ describe('CursosServico', () => {
       create: jest.fn(),
       findMany: jest.fn(),
       findFirst: jest.fn(),
+      update: jest.fn(),
     },
     usuario: {
       create: jest.fn(),
+    },
+    progressoAula: {
+      upsert: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -365,5 +371,83 @@ describe('CursosServico', () => {
     await expect(servico.obterCursoDoAluno('usuario-id', cursoId)).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  it('marca aula do aluno como concluída e conclui curso quando todas as aulas terminam', async () => {
+    const atualizadoEm = new Date();
+    const concluidoEm = new Date();
+    prismaServico.inscricaoCurso.findFirst.mockResolvedValue({
+      id: 'inscricao-id',
+      concluidoEm: null,
+    });
+    prismaServico.aulaCurso.findFirst.mockResolvedValue({ id: 'aula-id' });
+    prismaServico.progressoAula.upsert.mockResolvedValue({
+      id: 'progresso-id',
+      aulaId: 'aula-id',
+      concluida: true,
+      atualizadoEm,
+    });
+    prismaServico.aulaCurso.count.mockResolvedValue(2);
+    prismaServico.progressoAula.count.mockResolvedValue(2);
+    prismaServico.inscricaoCurso.update.mockResolvedValue({ concluidoEm });
+
+    await expect(
+      servico.atualizarProgressoAulaDoAluno('usuario-id', cursoId, 'aula-id', true),
+    ).resolves.toEqual({
+      id: 'progresso-id',
+      aulaId: 'aula-id',
+      concluida: true,
+      atualizadoEm,
+      cursoConcluido: true,
+      concluidoEm,
+    });
+
+    expect(prismaServico.progressoAula.upsert).toHaveBeenCalledWith({
+      where: {
+        inscricaoId_aulaId: {
+          inscricaoId: 'inscricao-id',
+          aulaId: 'aula-id',
+        },
+      },
+      update: {
+        concluida: true,
+      },
+      create: {
+        inscricaoId: 'inscricao-id',
+        aulaId: 'aula-id',
+        concluida: true,
+      },
+      select: {
+        id: true,
+        aulaId: true,
+        concluida: true,
+        atualizadoEm: true,
+      },
+    });
+    expect(prismaServico.inscricaoCurso.update).toHaveBeenCalledWith({
+      where: {
+        id: 'inscricao-id',
+      },
+      data: {
+        concluidoEm: expect.any(Date),
+      },
+      select: {
+        concluidoEm: true,
+      },
+    });
+  });
+
+  it('bloqueia progresso de aula fora do curso inscrito', async () => {
+    prismaServico.inscricaoCurso.findFirst.mockResolvedValue({
+      id: 'inscricao-id',
+      concluidoEm: null,
+    });
+    prismaServico.aulaCurso.findFirst.mockResolvedValue(null);
+
+    await expect(
+      servico.atualizarProgressoAulaDoAluno('usuario-id', cursoId, 'aula-id', true),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(prismaServico.progressoAula.upsert).not.toHaveBeenCalled();
   });
 });

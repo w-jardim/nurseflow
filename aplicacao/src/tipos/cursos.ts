@@ -61,6 +61,19 @@ export type AulaCurso = {
   duracaoSegundos: number | null;
   ordem: number;
   criadoEm: string;
+  progressos?: {
+    concluida: boolean;
+    atualizadoEm: string;
+  }[];
+};
+
+export type ProgressoAula = {
+  id: string;
+  aulaId: string;
+  concluida: boolean;
+  atualizadoEm: string;
+  cursoConcluido: boolean;
+  concluidoEm: string | null;
 };
 
 export type ModuloCurso = {

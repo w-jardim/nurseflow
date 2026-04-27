@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { requisitarApi } from '../../servicos/api';
-import type { CursoAluno, CursoAlunoDetalhe } from '../../tipos/cursos';
+import type { CursoAluno, CursoAlunoDetalhe, ProgressoAula } from '../../tipos/cursos';
 import { formatarReais } from '../../utilitarios/moeda';
 
 export function PaginaAlunoCursos() {
@@ -31,6 +31,57 @@ export function PaginaAlunoCursos() {
     } finally {
       setCarregandoCurso(false);
     }
+  }
+
+  async function alternarProgressoAula(cursoId: string, aulaId: string, concluida: boolean) {
+    const progresso = await requisitarApi<ProgressoAula>(
+      `/aluno/cursos/${cursoId}/aulas/${aulaId}/progresso`,
+      {
+        metodo: 'PATCH',
+        autenticada: true,
+        corpo: {
+          concluida,
+        },
+      },
+    );
+
+    setCursoAberto((atual) => {
+      if (!atual) return atual;
+
+      return {
+        ...atual,
+        concluidoEm: progresso.concluidoEm,
+        curso: {
+          ...atual.curso,
+          modulos: atual.curso.modulos.map((modulo) => ({
+            ...modulo,
+            aulas: modulo.aulas.map((aula) =>
+              aula.id === aulaId
+                ? {
+                    ...aula,
+                    progressos: [
+                      {
+                        concluida: progresso.concluida,
+                        atualizadoEm: progresso.atualizadoEm,
+                      },
+                    ],
+                  }
+                : aula,
+            ),
+          })),
+        },
+      };
+    });
+    setInscricoes((atuais) =>
+      atuais.map((inscricao) =>
+        inscricao.curso.id === cursoId
+          ? {
+              ...inscricao,
+              concluidoEm: progresso.concluidoEm,
+            }
+          : inscricao,
+      ),
+    );
   }
 
   if (carregando) {
@@ -67,6 +118,9 @@ export function PaginaAlunoCursos() {
                 <p className="mt-2 text-xs font-medium text-primario">
                   {formatarReais(inscricao.curso.precoCentavos)}
                 </p>
+                {inscricao.concluidoEm ? (
+                  <p className="mt-2 text-xs font-semibold text-emerald-700">Curso concluído</p>
+                ) : null}
               </button>
             ))}
           </section>
@@ -84,6 +138,11 @@ export function PaginaAlunoCursos() {
                   {cursoAberto.curso.descricao ? (
                     <p className="mt-2 text-sm text-slate-600">{cursoAberto.curso.descricao}</p>
                   ) : null}
+                  {cursoAberto.concluidoEm ? (
+                    <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+                      Curso concluído.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="mt-5 space-y-4">
@@ -99,15 +158,31 @@ export function PaginaAlunoCursos() {
                           <ul className="mt-3 space-y-2">
                             {modulo.aulas.map((aula) => (
                               <li key={aula.id} className="rounded-md bg-white px-3 py-2 text-sm">
-                                <p className="font-medium text-slate-800">{aula.titulo}</p>
-                                {aula.descricao ? (
-                                  <p className="mt-1 text-slate-500">{aula.descricao}</p>
-                                ) : null}
-                                {aula.videoReferencia ? (
-                                  <p className="mt-1 text-xs font-medium text-primario">
-                                    Vídeo: {aula.videoReferencia}
-                                  </p>
-                                ) : null}
+                                <label className="flex items-start gap-3">
+                                  <input
+                                    checked={Boolean(aula.progressos?.[0]?.concluida)}
+                                    className="mt-1 h-4 w-4 rounded border-slate-300 text-primario focus:ring-primario"
+                                    onChange={(evento) =>
+                                      void alternarProgressoAula(
+                                        cursoAberto.curso.id,
+                                        aula.id,
+                                        evento.target.checked,
+                                      )
+                                    }
+                                    type="checkbox"
+                                  />
+                                  <span>
+                                    <span className="font-medium text-slate-800">{aula.titulo}</span>
+                                    {aula.descricao ? (
+                                      <span className="mt-1 block text-slate-500">{aula.descricao}</span>
+                                    ) : null}
+                                    {aula.videoReferencia ? (
+                                      <span className="mt-1 block text-xs font-medium text-primario">
+                                        Vídeo: {aula.videoReferencia}
+                                      </span>
+                                    ) : null}
+                                  </span>
+                                </label>
                               </li>
                             ))}
                           </ul>

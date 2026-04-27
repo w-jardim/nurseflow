@@ -296,6 +296,19 @@ export class CursosServico {
                     duracaoSegundos: true,
                     ordem: true,
                     criadoEm: true,
+                    progressos: {
+                      where: {
+                        inscricao: {
+                          aluno: {
+                            usuarioId,
+                          },
+                        },
+                      },
+                      select: {
+                        concluida: true,
+                        atualizadoEm: true,
+                      },
+                    },
                   },
                 },
               },
@@ -310,6 +323,131 @@ export class CursosServico {
     }
 
     return inscricao;
+  }
+
+  async atualizarProgressoAulaDoAluno(
+    usuarioId: string,
+    cursoId: string,
+    aulaId: string,
+    concluida: boolean,
+  ) {
+    const inscricao = await this.prisma.inscricaoCurso.findFirst({
+      where: {
+        cursoId,
+        aluno: {
+          usuarioId,
+          excluidoEm: null,
+        },
+        curso: {
+          status: StatusCurso.PUBLICADO,
+          excluidoEm: null,
+        },
+      },
+      select: {
+        id: true,
+        concluidoEm: true,
+      },
+    });
+
+    if (!inscricao) {
+      throw new NotFoundException('Curso não encontrado para este aluno.');
+    }
+
+    const aula = await this.prisma.aulaCurso.findFirst({
+      where: {
+        id: aulaId,
+        modulo: {
+          cursoId,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!aula) {
+      throw new NotFoundException('Aula não encontrada para este curso.');
+    }
+
+    const progresso = await this.prisma.progressoAula.upsert({
+      where: {
+        inscricaoId_aulaId: {
+          inscricaoId: inscricao.id,
+          aulaId,
+        },
+      },
+      update: {
+        concluida,
+      },
+      create: {
+        inscricaoId: inscricao.id,
+        aulaId,
+        concluida,
+      },
+      select: {
+        id: true,
+        aulaId: true,
+        concluida: true,
+        atualizadoEm: true,
+      },
+    });
+
+    const totalAulas = await this.prisma.aulaCurso.count({
+      where: {
+        modulo: {
+          cursoId,
+        },
+      },
+    });
+    const aulasConcluidas = await this.prisma.progressoAula.count({
+      where: {
+        inscricaoId: inscricao.id,
+        concluida: true,
+        aula: {
+          modulo: {
+            cursoId,
+          },
+        },
+      },
+    });
+    const cursoConcluido = totalAulas > 0 && aulasConcluidas >= totalAulas;
+
+    if (cursoConcluido && !inscricao.concluidoEm) {
+      const inscricaoAtualizada = await this.prisma.inscricaoCurso.update({
+        where: {
+          id: inscricao.id,
+        },
+        data: {
+          concluidoEm: new Date(),
+        },
+        select: {
+          concluidoEm: true,
+        },
+      });
+
+      return {
+        ...progresso,
+        cursoConcluido,
+        concluidoEm: inscricaoAtualizada.concluidoEm,
+      };
+    }
+
+    if (!cursoConcluido && inscricao.concluidoEm) {
+      await this.prisma.inscricaoCurso.update({
+        where: {
+          id: inscricao.id,
+        },
+        data: {
+          concluidoEm: null,
+        },
+      });
+    }
+
+    return {
+      ...progresso,
+      cursoConcluido,
+      concluidoEm: cursoConcluido ? inscricao.concluidoEm : null,
+    };
   }
 
   async criarAula(
