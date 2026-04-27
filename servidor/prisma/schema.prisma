@@ -64,6 +64,12 @@ enum OrigemInteresse {
   SERVICO
 }
 
+enum StatusSolicitacao {
+  PENDENTE
+  CONFIRMADA
+  CANCELADA
+}
+
 model Usuario {
   id                 String        @id @default(uuid()) @db.Uuid
   nome               String        @db.VarChar(120)
@@ -115,6 +121,7 @@ model Profissional {
   consultorias       Consultoria[]
   servicos           Servico[]
   interesses         InteressePublico[]
+  solicitacoes       SolicitacaoAgendamento[]
   assinaturas        Assinatura[]
   transacoes         Transacao[]
   configuracaoPagina ConfiguracaoPagina?
@@ -397,6 +404,25 @@ model ConfiguracaoPagina {
   profissional   Profissional @relation(fields: [profissionalId], references: [id])
 
   @@map("configuracoes_pagina")
+}
+
+model SolicitacaoAgendamento {
+  id              String            @id @default(uuid()) @db.Uuid
+  profissionalId  String            @map("profissional_id") @db.Uuid
+  nome            String            @db.VarChar(120)
+  email           String            @db.VarChar(255)
+  telefone        String?           @db.VarChar(24)
+  dataDesejada    DateTime          @map("data_desejada") @db.Date
+  horarioDesejado String?           @map("horario_desejado") @db.VarChar(10)
+  observacoes     String?           @db.VarChar(1000)
+  status          StatusSolicitacao @default(PENDENTE)
+  criadoEm        DateTime          @default(now()) @map("criado_em")
+  atualizadoEm    DateTime          @updatedAt @map("atualizado_em")
+
+  profissional    Profissional      @relation(fields: [profissionalId], references: [id])
+
+  @@index([profissionalId, criadoEm])
+  @@map("solicitacoes_agendamento")
 }
 
 model LogAuditoria {

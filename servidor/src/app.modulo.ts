@@ -6,6 +6,7 @@ import { AppControlador } from './app.controlador';
 import { PrismaModulo } from './comum/prisma/prisma.modulo';
 import { TenantInterceptor } from './comum/interceptadores/tenant.interceptor';
 import { AdminModulo } from './modulos/admin/admin.modulo';
+import { AgendamentosModulo } from './modulos/agendamentos/agendamentos.modulo';
 import { AlunosModulo } from './modulos/alunos/alunos.modulo';
 import { AuditoriaModulo } from './modulos/auditoria/auditoria.modulo';
 import { AutenticacaoModulo } from './modulos/autenticacao/autenticacao.modulo';
@@ -36,6 +37,7 @@ import { ServicosModulo } from './modulos/servicos/servicos.modulo';
     ConsultasModulo,
     ProfissionaisModulo,
     InteressesModulo,
+    AgendamentosModulo,
     PagamentosModulo,
     ServicosModulo,
     AdminModulo,

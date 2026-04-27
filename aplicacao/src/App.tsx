@@ -8,6 +8,7 @@ import { PaginaCadastro } from './paginas/PaginaCadastro';
 import { PaginaInicial } from './paginas/PaginaInicial';
 import { PaginaLogin } from './paginas/PaginaLogin';
 import { PaginaPublicaProfissional } from './paginas/PaginaPublicaProfissional';
+import { PaginaAgendamentos } from './paginas/painel/PaginaAgendamentos';
 import { PaginaAuditoria } from './paginas/painel/PaginaAuditoria';
 import { PaginaAlunos } from './paginas/painel/PaginaAlunos';
 import { PaginaConsultas } from './paginas/painel/PaginaConsultas';
@@ -18,6 +19,11 @@ import { PaginaInteresses } from './paginas/painel/PaginaInteresses';
 import { PaginaPacientes } from './paginas/painel/PaginaPacientes';
 import { PaginaPerfil } from './paginas/painel/PaginaPerfil';
 import { PaginaServicos } from './paginas/painel/PaginaServicos';
+import { PaginaPublicaHome } from './paginas/publico/PaginaPublicaHome';
+import { PaginaPublicaCursos } from './paginas/publico/PaginaPublicaCursos';
+import { PaginaPublicaServicos } from './paginas/publico/PaginaPublicaServicos';
+import { PaginaPublicaConsultorias } from './paginas/publico/PaginaPublicaConsultorias';
+import { PaginaPublicaAgendar } from './paginas/publico/PaginaPublicaAgendar';
 
 export function App() {
   return (
@@ -39,6 +45,7 @@ export function App() {
         <Route path="/painel/consultas" element={<PaginaConsultas />} />
         <Route path="/painel/consultorias" element={<PaginaConsultorias />} />
         <Route path="/painel/interesses" element={<PaginaInteresses />} />
+        <Route path="/painel/agendamentos" element={<PaginaAgendamentos />} />
         <Route path="/painel/auditoria" element={<PaginaAuditoria />} />
         <Route path="/painel/perfil" element={<PaginaPerfil />} />
 
@@ -50,7 +57,13 @@ export function App() {
         <Route path="/admin/profissionais" element={<PaginaAdminProfissionais />} />
       </Route>
 
-      <Route path="/:slug" element={<PaginaPublicaProfissional />} />
+      <Route path="/:slug" element={<PaginaPublicaProfissional />}>
+        <Route index element={<PaginaPublicaHome />} />
+        <Route path="cursos" element={<PaginaPublicaCursos />} />
+        <Route path="servicos" element={<PaginaPublicaServicos />} />
+        <Route path="consultorias" element={<PaginaPublicaConsultorias />} />
+        <Route path="agendar" element={<PaginaPublicaAgendar />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

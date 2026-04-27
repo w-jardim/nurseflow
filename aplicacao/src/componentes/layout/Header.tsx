@@ -10,6 +10,7 @@ const TITULOS: Record<string, string> = {
   '/painel/consultas': 'Consultas',
   '/painel/consultorias': 'Consultorias',
   '/painel/interesses': 'Interesses',
+  '/painel/agendamentos': 'Agendamentos',
   '/painel/auditoria': 'Auditoria',
   '/painel/perfil': 'Perfil',
   '/aluno/cursos': 'Meus Cursos',
