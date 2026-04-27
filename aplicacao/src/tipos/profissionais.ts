@@ -41,4 +41,11 @@ export type PaginaPublicaProfissional = {
     modalidade: ModalidadeConsultoria;
     precoCentavos: number;
   }>;
+  servicos: Array<{
+    id: string;
+    titulo: string;
+    descricao: string | null;
+    precoCentavos: number;
+    exibirPreco: boolean;
+  }>;
 };

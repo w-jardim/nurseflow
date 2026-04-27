@@ -24,6 +24,12 @@ const INTERESSE_SELECT = {
       titulo: true,
     },
   },
+  servico: {
+    select: {
+      id: true,
+      titulo: true,
+    },
+  },
 } satisfies Prisma.InteressePublicoSelect;
 
 @Injectable()
@@ -43,7 +49,8 @@ export class InteressesServico {
   }
 
   async criarPublico(slug: string, dados: CriarInteressePublicoDto) {
-    if (dados.cursoId && dados.consultoriaId) {
+    const itensSelecionados = [dados.cursoId, dados.consultoriaId, dados.servicoId].filter(Boolean);
+    if (itensSelecionados.length > 1) {
       throw new BadRequestException('Selecione apenas um item de interesse.');
     }
 
@@ -97,11 +104,30 @@ export class InteressesServico {
       }
     }
 
+    if (dados.servicoId) {
+      const servico = await this.prisma.servico.findFirst({
+        where: {
+          id: dados.servicoId,
+          profissionalId: profissional.id,
+          publicado: true,
+          excluidoEm: null,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!servico) {
+        throw new NotFoundException('Serviço não encontrado nesta página.');
+      }
+    }
+
     const interesse = await this.prisma.interessePublico.create({
       data: {
         profissionalId: profissional.id,
         cursoId: dados.cursoId ?? null,
         consultoriaId: dados.consultoriaId ?? null,
+        servicoId: dados.servicoId ?? null,
         origem,
         nome: dados.nome.trim(),
         email: dados.email.trim().toLowerCase(),
@@ -128,6 +154,10 @@ export class InteressesServico {
 
     if (dados.consultoriaId) {
       return OrigemInteresse.CONSULTORIA;
+    }
+
+    if (dados.servicoId) {
+      return OrigemInteresse.SERVICO;
     }
 
     return dados.origem ?? OrigemInteresse.PERFIL;

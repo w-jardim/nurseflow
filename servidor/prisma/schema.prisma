@@ -61,6 +61,7 @@ enum OrigemInteresse {
   PERFIL
   CURSO
   CONSULTORIA
+  SERVICO
 }
 
 model Usuario {
@@ -112,6 +113,7 @@ model Profissional {
   cursos             Curso[]
   consultas          Consulta[]
   consultorias       Consultoria[]
+  servicos           Servico[]
   interesses         InteressePublico[]
   assinaturas        Assinatura[]
   transacoes         Transacao[]
@@ -304,11 +306,31 @@ model Consultoria {
   @@map("consultorias")
 }
 
+model Servico {
+  id             String             @id @default(uuid()) @db.Uuid
+  profissionalId String             @map("profissional_id") @db.Uuid
+  titulo         String             @db.VarChar(160)
+  descricao      String?
+  precoCentavos  Int                @default(0) @map("preco_centavos")
+  exibirPreco    Boolean            @default(true) @map("exibir_preco")
+  publicado      Boolean            @default(true)
+  criadoEm       DateTime           @default(now()) @map("criado_em")
+  atualizadoEm   DateTime           @updatedAt @map("atualizado_em")
+  excluidoEm     DateTime?          @map("excluido_em")
+
+  profissional   Profissional       @relation(fields: [profissionalId], references: [id])
+  interesses     InteressePublico[]
+
+  @@index([profissionalId, publicado])
+  @@map("servicos")
+}
+
 model InteressePublico {
   id             String          @id @default(uuid()) @db.Uuid
   profissionalId String          @map("profissional_id") @db.Uuid
   cursoId        String?         @map("curso_id") @db.Uuid
   consultoriaId  String?         @map("consultoria_id") @db.Uuid
+  servicoId      String?         @map("servico_id") @db.Uuid
   origem         OrigemInteresse @default(PERFIL)
   nome           String          @db.VarChar(120)
   email          String          @db.VarChar(255)
@@ -320,10 +342,12 @@ model InteressePublico {
   profissional   Profissional    @relation(fields: [profissionalId], references: [id])
   curso          Curso?          @relation(fields: [cursoId], references: [id])
   consultoria    Consultoria?    @relation(fields: [consultoriaId], references: [id])
+  servico        Servico?        @relation(fields: [servicoId], references: [id])
 
   @@index([profissionalId, criadoEm])
   @@index([cursoId])
   @@index([consultoriaId])
+  @@index([servicoId])
   @@map("interesses_publicos")
 }
 

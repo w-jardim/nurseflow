@@ -17,6 +17,7 @@ import { PaginaDashboard } from './paginas/painel/PaginaDashboard';
 import { PaginaInteresses } from './paginas/painel/PaginaInteresses';
 import { PaginaPacientes } from './paginas/painel/PaginaPacientes';
 import { PaginaPerfil } from './paginas/painel/PaginaPerfil';
+import { PaginaServicos } from './paginas/painel/PaginaServicos';
 
 export function App() {
   return (
@@ -34,6 +35,7 @@ export function App() {
         <Route path="/painel/alunos" element={<PaginaAlunos />} />
         <Route path="/painel/pacientes" element={<PaginaPacientes />} />
         <Route path="/painel/cursos" element={<PaginaCursos />} />
+        <Route path="/painel/servicos" element={<PaginaServicos />} />
         <Route path="/painel/consultas" element={<PaginaConsultas />} />
         <Route path="/painel/consultorias" element={<PaginaConsultorias />} />
         <Route path="/painel/interesses" element={<PaginaInteresses />} />

@@ -34,4 +34,8 @@ export class CriarInteressePublicoDto {
   @IsOptional()
   @IsUUID()
   consultoriaId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  servicoId?: string;
 }

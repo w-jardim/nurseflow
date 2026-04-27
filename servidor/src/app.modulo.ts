@@ -16,6 +16,7 @@ import { InteressesModulo } from './modulos/interesses/interesses.modulo';
 import { PacientesModulo } from './modulos/pacientes/pacientes.modulo';
 import { PagamentosModulo } from './modulos/pagamentos/pagamentos.modulo';
 import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modulo';
+import { ServicosModulo } from './modulos/servicos/servicos.modulo';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ProfissionaisModulo } from './modulos/profissionais/profissionais.modul
     ProfissionaisModulo,
     InteressesModulo,
     PagamentosModulo,
+    ServicosModulo,
     AdminModulo,
   ],
   controllers: [AppControlador],

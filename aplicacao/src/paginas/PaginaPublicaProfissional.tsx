@@ -7,10 +7,11 @@ import { formatarReais } from '../utilitarios/moeda';
 import { mascararTelefone } from '../utilitarios/mascaras';
 
 type InteresseSelecionado = {
-  origem: 'PERFIL' | 'CURSO' | 'CONSULTORIA';
+  origem: 'PERFIL' | 'CURSO' | 'CONSULTORIA' | 'SERVICO';
   titulo: string;
   cursoId?: string;
   consultoriaId?: string;
+  servicoId?: string;
 };
 
 export function PaginaPublicaProfissional() {
@@ -65,6 +66,7 @@ export function PaginaPublicaProfissional() {
           origem: interesse.origem,
           cursoId: interesse.cursoId,
           consultoriaId: interesse.consultoriaId,
+          servicoId: interesse.servicoId,
         },
       });
       setNome('');
@@ -124,7 +126,7 @@ export function PaginaPublicaProfissional() {
           ) : null}
         </div>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-2">
+        <div className="mt-10 grid gap-5 xl:grid-cols-3">
           <section>
             <h2 className="text-xl font-semibold">Cursos</h2>
             <div className="mt-4 space-y-3">
@@ -152,6 +154,43 @@ export function PaginaPublicaProfissional() {
                           origem: 'CURSO',
                           titulo: curso.titulo,
                           cursoId: curso.id,
+                        })
+                      }
+                      type="button"
+                    >
+                      Tenho interesse
+                    </button>
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold">Serviços</h2>
+            <div className="mt-4 space-y-3">
+              {pagina.servicos.length === 0 ? (
+                <p className="text-sm text-slate-500">Nenhum serviço publicado.</p>
+              ) : (
+                pagina.servicos.map((servico) => (
+                  <article key={servico.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold">{servico.titulo}</h3>
+                        <p className="mt-1 text-sm text-slate-600">Serviço profissional</p>
+                      </div>
+                      <span className="rounded-md border border-slate-200 px-2 py-1 text-sm font-semibold">
+                        {servico.exibirPreco ? formatarReais(servico.precoCentavos) : 'Sob consulta'}
+                      </span>
+                    </div>
+                    {servico.descricao ? <p className="mt-3 text-sm text-slate-600">{servico.descricao}</p> : null}
+                    <button
+                      className="mt-4 h-10 rounded-md bg-primario px-4 text-sm font-semibold text-white transition hover:bg-teal-800"
+                      onClick={() =>
+                        setInteresse({
+                          origem: 'SERVICO',
+                          titulo: servico.titulo,
+                          servicoId: servico.id,
                         })
                       }
                       type="button"

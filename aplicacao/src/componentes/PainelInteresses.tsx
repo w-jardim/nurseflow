@@ -10,12 +10,14 @@ type PainelInteressesProps = {
 function descreverOrigem(interesse: InteressePublico) {
   if (interesse.curso) return interesse.curso.titulo;
   if (interesse.consultoria) return interesse.consultoria.titulo;
+  if (interesse.servico) return interesse.servico.titulo;
   return 'Página profissional';
 }
 
 function corOrigem(interesse: InteressePublico) {
   if (interesse.curso) return 'azul' as const;
   if (interesse.consultoria) return 'roxo' as const;
+  if (interesse.servico) return 'verde' as const;
   return 'ciano' as const;
 }
 

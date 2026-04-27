@@ -57,6 +57,22 @@ const PERFIL_PUBLICO_SELECT = {
       precoCentavos: true,
     },
   },
+  servicos: {
+    where: {
+      publicado: true,
+      excluidoEm: null,
+    },
+    orderBy: {
+      criadoEm: 'desc',
+    },
+    select: {
+      id: true,
+      titulo: true,
+      descricao: true,
+      precoCentavos: true,
+      exibirPreco: true,
+    },
+  },
 } satisfies Prisma.ProfissionalSelect;
 
 @Injectable()

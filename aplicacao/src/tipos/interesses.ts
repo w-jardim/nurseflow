@@ -1,4 +1,4 @@
-export type OrigemInteresse = 'PERFIL' | 'CURSO' | 'CONSULTORIA';
+export type OrigemInteresse = 'PERFIL' | 'CURSO' | 'CONSULTORIA' | 'SERVICO';
 
 export type InteressePublico = {
   id: string;
@@ -14,6 +14,10 @@ export type InteressePublico = {
     titulo: string;
   } | null;
   consultoria: {
+    id: string;
+    titulo: string;
+  } | null;
+  servico: {
     id: string;
     titulo: string;
   } | null;
