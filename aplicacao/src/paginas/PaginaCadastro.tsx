@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CampoTexto } from '../componentes/CampoTexto';
+import { Campo } from '../componentes/ui/Campo';
+import { Botao } from '../componentes/ui/Botao';
 import { requisitarApi } from '../servicos/api';
 import { salvarToken } from '../servicos/sessao';
 import type { RespostaAutenticacao } from '../tipos/autenticacao';
@@ -37,57 +38,61 @@ export function PaginaCadastro() {
   return (
     <form onSubmit={cadastrar} className="space-y-5">
       <div>
-        <h2 className="text-2xl font-bold">Criar conta</h2>
-        <p className="mt-2 text-sm text-slate-600">Comece com o plano gratuito.</p>
+        <h2 className="text-xl font-bold text-slate-900">Criar conta</h2>
+        <p className="mt-1 text-sm text-slate-500">Comece com o plano gratuito, sem cartão.</p>
       </div>
 
-      <CampoTexto
+      <Campo
         rotulo="Nome profissional"
         name="nome"
+        placeholder="Dra. Ana Lima"
         value={nome}
-        onChange={(evento) => setNome(evento.target.value)}
+        onChange={(e) => setNome(e.target.value)}
         required
       />
-      <CampoTexto
+      <Campo
         rotulo="E-mail"
         name="email"
         type="email"
         autoComplete="email"
+        placeholder="seu@email.com"
         value={email}
-        onChange={(evento) => setEmail(evento.target.value)}
+        onChange={(e) => setEmail(e.target.value)}
         required
       />
-      <CampoTexto
+      <Campo
         rotulo="Endereço da sua página"
         name="slug"
-        placeholder="profissional-saude"
+        placeholder="ana-lima"
+        ajuda="Será o link público do seu perfil: nurseflow.com/ana-lima"
         value={slug}
-        onChange={(evento) => setSlug(evento.target.value.toLowerCase())}
+        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
         required
       />
-      <CampoTexto
+      <Campo
         rotulo="Senha"
         name="senha"
         type="password"
         autoComplete="new-password"
+        placeholder="Mínimo 8 caracteres"
         value={senha}
-        onChange={(evento) => setSenha(evento.target.value)}
+        onChange={(e) => setSenha(e.target.value)}
         required
       />
 
-      {erro ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p> : null}
+      {erro && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+          <p className="text-sm text-red-700">{erro}</p>
+        </div>
+      )}
 
-      <button
-        className="h-11 w-full rounded-md bg-primario px-4 font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-        disabled={enviando}
-        type="submit"
-      >
-        {enviando ? 'Criando...' : 'Criar conta'}
-      </button>
+      <Botao type="submit" larguraTotal tamanho="lg" carregando={enviando}>
+        {enviando ? 'Criando conta...' : 'Criar conta grátis'}
+      </Botao>
 
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-slate-500">
         Já tem conta?{' '}
-        <Link className="font-semibold text-primario" to="/autenticacao/login">
+        <Link className="font-semibold text-primario hover:text-primario-800" to="/autenticacao/login">
           Entrar
         </Link>
       </p>

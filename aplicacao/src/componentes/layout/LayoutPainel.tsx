@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { ProvedorSessao, useSessao } from '../../contextos/SessaoContexto';
+import { ProvedorToast } from '../../contextos/ToastContexto';
 import { Header } from './Header';
 import { Rodape } from './Rodape';
 import { Sidebar } from './Sidebar';
@@ -14,7 +15,7 @@ function Conteudo() {
       <div className="grid min-h-screen place-items-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primario border-t-transparent" />
-          <p className="text-sm text-slate-500">Carregando...</p>
+          <p className="text-sm text-slate-400">Carregando...</p>
         </div>
       </div>
     );
@@ -29,7 +30,7 @@ function Conteudo() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header aoAbrirMenu={() => setMenuAberto(true)} />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-5 lg:p-6">
           <Outlet />
         </main>
 
@@ -42,7 +43,9 @@ function Conteudo() {
 export function LayoutPainel() {
   return (
     <ProvedorSessao>
-      <Conteudo />
+      <ProvedorToast>
+        <Conteudo />
+      </ProvedorToast>
     </ProvedorSessao>
   );
 }

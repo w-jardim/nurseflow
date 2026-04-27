@@ -1,5 +1,10 @@
 import { FormEvent, useState } from 'react';
-import { CampoTexto } from './CampoTexto';
+import { Campo } from './ui/Campo';
+import { CampoSelect } from './ui/Campo';
+import { Botao } from './ui/Botao';
+import { Badge } from './ui/Badge';
+import { EstadoVazio } from './ui/EstadoVazio';
+import { useToast } from '../contextos/ToastContexto';
 import type { Consulta, StatusConsulta } from '../tipos/consultas';
 import type { Contato } from '../tipos/contatos';
 import { mascararTelefone } from '../utilitarios/mascaras';
@@ -17,166 +22,164 @@ type PainelConsultasProps = {
 };
 
 function formatarDataHora(valor: string) {
-  return new Date(valor).toLocaleString('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  });
+  return new Date(valor).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-function rotuloStatus(status: StatusConsulta) {
-  const rotulos: Record<StatusConsulta, string> = {
-    AGENDADA: 'Agendada',
-    CONFIRMADA: 'Confirmada',
-    CANCELADA: 'Cancelada',
-    CONCLUIDA: 'Concluída',
-  };
+const COR_STATUS: Record<StatusConsulta, 'ciano' | 'verde' | 'vermelho' | 'cinza'> = {
+  AGENDADA: 'ciano',
+  CONFIRMADA: 'verde',
+  CANCELADA: 'vermelho',
+  CONCLUIDA: 'cinza',
+};
 
-  return rotulos[status];
-}
+const ROTULO_STATUS: Record<StatusConsulta, string> = {
+  AGENDADA: 'Agendada',
+  CONFIRMADA: 'Confirmada',
+  CANCELADA: 'Cancelada',
+  CONCLUIDA: 'Concluída',
+};
 
 export function PainelConsultas({ pacientes, consultas, aoCriar }: PainelConsultasProps) {
+  const toast = useToast();
   const [pacienteId, setPacienteId] = useState('');
   const [inicioEm, setInicioEm] = useState('');
   const [fimEm, setFimEm] = useState('');
   const [status, setStatus] = useState<StatusConsulta>('AGENDADA');
   const [observacoes, setObservacoes] = useState('');
-  const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   async function criar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    setErro('');
     setEnviando(true);
 
     try {
-      await aoCriar({
-        pacienteId,
-        inicioEm,
-        fimEm,
-        status,
-        observacoes,
-      });
+      await aoCriar({ pacienteId, inicioEm, fimEm, status, observacoes });
       setPacienteId('');
       setInicioEm('');
       setFimEm('');
       setStatus('AGENDADA');
       setObservacoes('');
+      toast('Agendamento criado com sucesso.');
     } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Não foi possível salvar o agendamento.');
+      toast(error instanceof Error ? error.message : 'Não foi possível salvar o agendamento.', 'erro');
     } finally {
       setEnviando(false);
     }
   }
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div>
-        <h2 className="text-lg font-semibold">Agenda</h2>
-        <p className="mt-1 text-sm text-slate-600">Organize atendimentos com pacientes cadastrados.</p>
-      </div>
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <div className="mb-5">
+          <h2 className="font-semibold text-slate-800">Novo agendamento</h2>
+          <p className="mt-0.5 text-sm text-slate-500">Organize atendimentos com pacientes cadastrados.</p>
+        </div>
 
-      <form className="mt-5 grid gap-3" onSubmit={criar}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-medium text-slate-800">Paciente</span>
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
+        <form className="grid gap-4" onSubmit={criar}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <CampoSelect
+              rotulo="Paciente"
               value={pacienteId}
-              onChange={(evento) => setPacienteId(evento.target.value)}
+              onChange={setPacienteId}
               required
             >
               <option value="">Selecione</option>
-              {pacientes.map((paciente) => (
-                <option key={paciente.id} value={paciente.id}>
-                  {[paciente.nome, paciente.sobrenome].filter(Boolean).join(' ')}
+              {pacientes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {[p.nome, p.sobrenome].filter(Boolean).join(' ')}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium text-slate-800">Status</span>
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
-              value={status}
-              onChange={(evento) => setStatus(evento.target.value as StatusConsulta)}
-            >
+            </CampoSelect>
+
+            <CampoSelect rotulo="Status" value={status} onChange={(v) => setStatus(v as StatusConsulta)}>
               <option value="AGENDADA">Agendada</option>
               <option value="CONFIRMADA">Confirmada</option>
-            </select>
+            </CampoSelect>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo
+              rotulo="Início"
+              name="consulta-inicio"
+              type="datetime-local"
+              value={inicioEm}
+              onChange={(e) => setInicioEm(e.target.value)}
+              required
+            />
+            <Campo
+              rotulo="Fim"
+              name="consulta-fim"
+              type="datetime-local"
+              value={fimEm}
+              onChange={(e) => setFimEm(e.target.value)}
+              required
+            />
+          </div>
+
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Observações administrativas</span>
+            <textarea
+              className="mt-1.5 min-h-20 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              maxLength={1000}
+            />
           </label>
+
+          <Botao type="submit" carregando={enviando} disabled={pacientes.length === 0}>
+            {enviando ? 'Salvando...' : 'Adicionar agendamento'}
+          </Botao>
+        </form>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-card">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+            {consultas.length} atendimento{consultas.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <CampoTexto
-            rotulo="Início"
-            name="consulta-inicio"
-            type="datetime-local"
-            value={inicioEm}
-            onChange={(evento) => setInicioEm(evento.target.value)}
-            required
-          />
-          <CampoTexto
-            rotulo="Fim"
-            name="consulta-fim"
-            type="datetime-local"
-            value={fimEm}
-            onChange={(evento) => setFimEm(evento.target.value)}
-            required
-          />
-        </div>
-        <label className="block">
-          <span className="text-sm font-medium text-slate-800">Observações administrativas</span>
-          <textarea
-            className="mt-2 min-h-20 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
-            value={observacoes}
-            onChange={(evento) => setObservacoes(evento.target.value)}
-            maxLength={1000}
-          />
-        </label>
 
-        {erro ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p> : null}
-
-        <button
-          className="h-10 rounded-md bg-primario px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-          disabled={enviando}
-          type="submit"
-        >
-          {enviando ? 'Salvando...' : 'Adicionar agendamento'}
-        </button>
-      </form>
-
-      <div className="mt-5 border-t border-slate-100 pt-4">
         {consultas.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhum atendimento agendado.</p>
+          <EstadoVazio
+            titulo="Nenhum atendimento agendado"
+            descricao="Cadastre pacientes e use o formulário acima para agendar."
+            icone={
+              <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            }
+          />
         ) : (
-          <ul className="space-y-3">
+          <ul className="divide-y divide-slate-100">
             {consultas.map((consulta) => (
-              <li key={consulta.id} className="rounded-md bg-slate-50 px-3 py-3">
+              <li key={consulta.id} className="px-6 py-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium text-slate-800">
                       {[consulta.paciente.nome, consulta.paciente.sobrenome].filter(Boolean).join(' ')}
                     </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {formatarDataHora(consulta.inicioEm)} até {formatarDataHora(consulta.fimEm)}
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      {formatarDataHora(consulta.inicioEm)} → {formatarDataHora(consulta.fimEm)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {[
+                        consulta.paciente.email,
+                        consulta.paciente.telefone ? mascararTelefone(consulta.paciente.telefone) : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || 'Sem contato'}
                     </p>
                   </div>
-                  <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
-                    {rotuloStatus(consulta.status)}
-                  </span>
+                  <Badge cor={COR_STATUS[consulta.status]}>{ROTULO_STATUS[consulta.status]}</Badge>
                 </div>
-                <p className="mt-2 text-sm text-slate-700">
-                  {[consulta.paciente.email, consulta.paciente.telefone ? mascararTelefone(consulta.paciente.telefone) : null]
-                    .filter(Boolean)
-                    .join(' · ') || 'Sem contato informado'}
-                </p>
-                {consulta.observacoes ? (
-                  <p className="mt-2 text-sm text-slate-600">{consulta.observacoes}</p>
-                ) : null}
+                {consulta.observacoes && (
+                  <p className="mt-2 text-sm text-slate-500">{consulta.observacoes}</p>
+                )}
               </li>
             ))}
           </ul>
         )}
       </div>
-    </article>
+    </div>
   );
 }

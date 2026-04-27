@@ -1,5 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { CampoTexto } from './CampoTexto';
+import { Campo, CampoArea, CampoSelect } from './ui/Campo';
+import { Botao } from './ui/Botao';
+import { EstadoVazio } from './ui/EstadoVazio';
+import { useToast } from '../contextos/ToastContexto';
 import { requisitarApi } from '../servicos/api';
 import type { AulaCurso, Curso, ModuloCurso } from '../tipos/cursos';
 
@@ -8,21 +11,18 @@ type PainelConteudoCursoProps = {
 };
 
 export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
+  const toast = useToast();
   const [cursoId, setCursoId] = useState('');
   const [modulos, setModulos] = useState<ModuloCurso[]>([]);
   const [tituloModulo, setTituloModulo] = useState('');
   const [moduloAulaId, setModuloAulaId] = useState('');
   const [tituloAula, setTituloAula] = useState('');
   const [descricaoAula, setDescricaoAula] = useState('');
-  const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [salvandoModulo, setSalvandoModulo] = useState(false);
   const [salvandoAula, setSalvandoAula] = useState(false);
 
-  const cursoSelecionado = useMemo(
-    () => cursos.find((curso) => curso.id === cursoId) ?? null,
-    [cursoId, cursos],
-  );
+  const cursoSelecionado = useMemo(() => cursos.find((c) => c.id === cursoId) ?? null, [cursoId, cursos]);
 
   useEffect(() => {
     if (!cursoId) {
@@ -31,26 +31,19 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
       return;
     }
 
-    setErro('');
     setCarregando(true);
     requisitarApi<ModuloCurso[]>(`/cursos/${cursoId}/modulos`, { autenticada: true })
-      .then((resposta) => {
-        setModulos(resposta);
-        setModuloAulaId(resposta[0]?.id ?? '');
+      .then((res) => {
+        setModulos(res);
+        setModuloAulaId(res[0]?.id ?? '');
       })
-      .catch((error) => setErro(error instanceof Error ? error.message : 'Não foi possível carregar o curso.'))
+      .catch((err) => toast(err instanceof Error ? err.message : 'Erro ao carregar conteúdo.', 'erro'))
       .finally(() => setCarregando(false));
   }, [cursoId]);
 
   async function criarModulo(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-
-    if (!cursoId) {
-      setErro('Selecione um curso antes de criar módulos.');
-      return;
-    }
-
-    setErro('');
+    if (!cursoId) { toast('Selecione um curso.', 'aviso'); return; }
     setSalvandoModulo(true);
 
     try {
@@ -59,11 +52,12 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
         autenticada: true,
         corpo: { titulo: tituloModulo },
       });
-      setModulos((atuais) => [...atuais, modulo]);
+      setModulos((prev) => [...prev, modulo]);
       setModuloAulaId(modulo.id);
       setTituloModulo('');
-    } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Não foi possível criar o módulo.');
+      toast('Módulo adicionado.');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível criar o módulo.', 'erro');
     } finally {
       setSalvandoModulo(false);
     }
@@ -71,160 +65,166 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
 
   async function criarAula(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-
-    if (!cursoId || !moduloAulaId) {
-      setErro('Selecione um curso e um módulo antes de criar aulas.');
-      return;
-    }
-
-    setErro('');
+    if (!cursoId || !moduloAulaId) { toast('Selecione um curso e módulo.', 'aviso'); return; }
     setSalvandoAula(true);
 
     try {
       const aula = await requisitarApi<AulaCurso>(`/cursos/${cursoId}/modulos/${moduloAulaId}/aulas`, {
         metodo: 'POST',
         autenticada: true,
-        corpo: {
-          titulo: tituloAula,
-          descricao: descricaoAula || undefined,
-        },
+        corpo: { titulo: tituloAula, descricao: descricaoAula || undefined },
       });
-
-      setModulos((atuais) =>
-        atuais.map((modulo) =>
-          modulo.id === moduloAulaId ? { ...modulo, aulas: [...modulo.aulas, aula] } : modulo,
-        ),
+      setModulos((prev) =>
+        prev.map((m) => (m.id === moduloAulaId ? { ...m, aulas: [...m.aulas, aula] } : m)),
       );
       setTituloAula('');
       setDescricaoAula('');
-    } catch (error) {
-      setErro(error instanceof Error ? error.message : 'Não foi possível criar a aula.');
+      toast('Aula adicionada.');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Não foi possível criar a aula.', 'erro');
     } finally {
       setSalvandoAula(false);
     }
   }
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div>
-        <h2 className="text-lg font-semibold">Conteúdo do curso</h2>
-        <p className="mt-1 text-sm text-slate-600">Organize o curso em módulos e aulas.</p>
-      </div>
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <div className="mb-5">
+          <h2 className="font-semibold text-slate-800">Conteúdo do curso</h2>
+          <p className="mt-0.5 text-sm text-slate-500">Organize em módulos e aulas.</p>
+        </div>
 
-      <label className="mt-5 block">
-        <span className="text-sm font-medium text-slate-800">Curso</span>
-        <select
-          className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
-          value={cursoId}
-          onChange={(evento) => setCursoId(evento.target.value)}
-        >
+        <CampoSelect rotulo="Selecionar curso" value={cursoId} onChange={setCursoId}>
           <option value="">Selecione um curso</option>
-          {cursos.map((curso) => (
-            <option key={curso.id} value={curso.id}>
-              {curso.titulo}
+          {cursos.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.titulo}
             </option>
           ))}
-        </select>
-      </label>
+        </CampoSelect>
 
-      {cursoSelecionado ? (
-        <p className="mt-2 text-sm text-slate-600">Editando: {cursoSelecionado.titulo}</p>
-      ) : null}
+        {cursoSelecionado && (
+          <p className="mt-2 text-xs text-slate-400">Editando: {cursoSelecionado.titulo}</p>
+        )}
 
-      {erro ? <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p> : null}
+        {cursoId && (
+          <div className="mt-5 grid gap-5 border-t border-slate-100 pt-5 lg:grid-cols-2">
+            <form className="space-y-3" onSubmit={criarModulo}>
+              <p className="text-sm font-semibold text-slate-700">Novo módulo</p>
+              <Campo
+                rotulo="Título do módulo"
+                name="modulo-titulo"
+                value={tituloModulo}
+                onChange={(e) => setTituloModulo(e.target.value)}
+                required
+              />
+              <Botao
+                type="submit"
+                variante="secundario"
+                larguraTotal
+                carregando={salvandoModulo}
+                disabled={!cursoId}
+              >
+                {salvandoModulo ? 'Adicionando...' : 'Adicionar módulo'}
+              </Botao>
+            </form>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-2">
-        <form className="space-y-3" onSubmit={criarModulo}>
-          <h3 className="font-semibold">Novo módulo</h3>
-          <CampoTexto
-            rotulo="Título do módulo"
-            name="modulo-titulo"
-            value={tituloModulo}
-            onChange={(evento) => setTituloModulo(evento.target.value)}
-            required
-          />
-          <button
-            className="h-10 w-full rounded-md bg-primario px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-            disabled={salvandoModulo || !cursoId}
-            type="submit"
-          >
-            {salvandoModulo ? 'Salvando...' : 'Adicionar módulo'}
-          </button>
-        </form>
+            <form className="space-y-3" onSubmit={criarAula}>
+              <p className="text-sm font-semibold text-slate-700">Nova aula</p>
+              <CampoSelect
+                rotulo="Módulo"
+                value={moduloAulaId}
+                onChange={setModuloAulaId}
+                required
+              >
+                <option value="">Selecione</option>
+                {modulos.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.ordem}. {m.titulo}
+                  </option>
+                ))}
+              </CampoSelect>
+              <Campo
+                rotulo="Título da aula"
+                name="aula-titulo"
+                value={tituloAula}
+                onChange={(e) => setTituloAula(e.target.value)}
+                required
+              />
+              <CampoArea
+                rotulo="Descrição (opcional)"
+                name="aula-descricao"
+                value={descricaoAula}
+                onChange={(e) => setDescricaoAula(e.target.value)}
+                maxLength={2000}
+                className="min-h-16"
+              />
+              <Botao
+                type="submit"
+                variante="secundario"
+                larguraTotal
+                carregando={salvandoAula}
+                disabled={!cursoId || !moduloAulaId}
+              >
+                {salvandoAula ? 'Adicionando...' : 'Adicionar aula'}
+              </Botao>
+            </form>
+          </div>
+        )}
+      </div>
 
-        <form className="space-y-3" onSubmit={criarAula}>
-          <h3 className="font-semibold">Nova aula</h3>
-          <label className="block">
-            <span className="text-sm font-medium text-slate-800">Módulo</span>
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
-              value={moduloAulaId}
-              onChange={(evento) => setModuloAulaId(evento.target.value)}
-              required
-            >
-              <option value="">Selecione um módulo</option>
-              {modulos.map((modulo) => (
-                <option key={modulo.id} value={modulo.id}>
-                  {modulo.ordem}. {modulo.titulo}
-                </option>
-              ))}
-            </select>
-          </label>
-          <CampoTexto
-            rotulo="Título da aula"
-            name="aula-titulo"
-            value={tituloAula}
-            onChange={(evento) => setTituloAula(evento.target.value)}
-            required
-          />
-          <label className="block">
-            <span className="text-sm font-medium text-slate-800">Descrição opcional</span>
-            <textarea
-              className="mt-2 min-h-20 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base outline-none transition focus:border-primario focus:ring-2 focus:ring-teal-100"
-              value={descricaoAula}
-              onChange={(evento) => setDescricaoAula(evento.target.value)}
-              maxLength={2000}
+      {cursoId && (
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-card">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+              Estrutura do curso
+            </p>
+          </div>
+
+          {carregando ? (
+            <div className="px-6 py-8 text-center">
+              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-primario border-t-transparent" />
+            </div>
+          ) : modulos.length === 0 ? (
+            <EstadoVazio
+              titulo="Nenhum módulo ainda"
+              descricao="Adicione módulos e aulas usando os formulários acima."
+              icone={
+                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+              }
             />
-          </label>
-          <button
-            className="h-10 w-full rounded-md bg-primario px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-            disabled={salvandoAula || !cursoId || !moduloAulaId}
-            type="submit"
-          >
-            {salvandoAula ? 'Salvando...' : 'Adicionar aula'}
-          </button>
-        </form>
-      </div>
-
-      <div className="mt-5 border-t border-slate-100 pt-4">
-        {carregando ? <p className="text-sm text-slate-500">Carregando conteúdo...</p> : null}
-        {!carregando && cursoId && modulos.length === 0 ? (
-          <p className="text-sm text-slate-500">Nenhum módulo cadastrado para este curso.</p>
-        ) : null}
-        <div className="space-y-3">
-          {modulos.map((modulo) => (
-            <section key={modulo.id} className="rounded-md bg-slate-50 px-3 py-3">
-              <h3 className="font-semibold">
-                {modulo.ordem}. {modulo.titulo}
-              </h3>
-              {modulo.aulas.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-500">Nenhuma aula neste módulo.</p>
-              ) : (
-                <ol className="mt-2 space-y-2">
-                  {modulo.aulas.map((aula) => (
-                    <li key={aula.id} className="rounded-md bg-white px-3 py-2 text-sm">
-                      <p className="font-medium">
-                        {aula.ordem}. {aula.titulo}
-                      </p>
-                      {aula.descricao ? <p className="mt-1 text-slate-600">{aula.descricao}</p> : null}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </section>
-          ))}
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {modulos.map((modulo) => (
+                <div key={modulo.id} className="px-6 py-4">
+                  <p className="font-semibold text-slate-800">
+                    {modulo.ordem}. {modulo.titulo}
+                  </p>
+                  {modulo.aulas.length === 0 ? (
+                    <p className="mt-2 text-sm text-slate-400">Nenhuma aula neste módulo.</p>
+                  ) : (
+                    <ol className="mt-2 space-y-1.5 pl-4">
+                      {modulo.aulas.map((aula) => (
+                        <li key={aula.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
+                          <p className="text-sm font-medium text-slate-700">
+                            {aula.ordem}. {aula.titulo}
+                          </p>
+                          {aula.descricao && (
+                            <p className="mt-0.5 text-xs text-slate-500">{aula.descricao}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    </article>
+      )}
+    </div>
   );
 }

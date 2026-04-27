@@ -2,28 +2,46 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSessao } from '../../contextos/SessaoContexto';
 import { requisitarApi } from '../../servicos/api';
+import { Esqueleto } from '../../componentes/ui/Esqueleto';
 import type { Contato } from '../../tipos/contatos';
 import type { Curso } from '../../tipos/cursos';
 import type { Consulta } from '../../tipos/consultas';
 
-type Card = { rotulo: string; valor: number | string; cor: string; para: string };
+type Stat = { rotulo: string; valor: number | string; cor: string; svg: string; para: string };
 
-function CardEstatistica({ rotulo, valor, cor, para }: Card) {
+function CardStat({ rotulo, valor, cor, svg, para }: Stat) {
   return (
     <Link
       to={para}
-      className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+      className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:shadow-card-hover"
     >
-      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{rotulo}</span>
-      <span className={`text-3xl font-bold ${cor}`}>{valor}</span>
+      <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${cor}`}>
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d={svg} />
+        </svg>
+      </div>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{rotulo}</p>
+        <p className="mt-0.5 text-2xl font-bold text-slate-800">{valor}</p>
+      </div>
     </Link>
   );
 }
+
+const ACESSO_RAPIDO = [
+  { rotulo: 'Cadastrar aluno', para: '/painel/alunos', svg: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+  { rotulo: 'Novo paciente', para: '/painel/pacientes', svg: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
+  { rotulo: 'Agendar consulta', para: '/painel/consultas', svg: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+  { rotulo: 'Criar curso', para: '/painel/cursos', svg: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+  { rotulo: 'Ver interesses', para: '/painel/interesses', svg: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z' },
+  { rotulo: 'Editar perfil', para: '/painel/perfil', svg: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+];
 
 export function PaginaDashboard() {
   const { usuario, perfil } = useSessao();
 
   if (usuario?.papel === 'SUPER_ADMIN') return <Navigate to="/admin" replace />;
+
   const [totais, setTotais] = useState({ alunos: 0, pacientes: 0, cursos: 0, consultas: 0 });
   const [carregando, setCarregando] = useState(true);
 
@@ -46,59 +64,81 @@ export function PaginaDashboard() {
       .finally(() => setCarregando(false));
   }, []);
 
+  const primeiroNome = usuario?.nome?.split(' ')[0] ?? '';
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">
-          Olá, {usuario?.nome?.split(' ')[0]} 👋
-        </h1>
-        {perfil?.slug && (
-          <p className="mt-1 text-sm text-slate-500">
-            Sua página pública:{' '}
-            <a
-              href={`/${perfil.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-primario hover:underline"
-            >
-              /{perfil.slug}
-            </a>
-          </p>
-        )}
+    <div className="space-y-6 animate-fade-up">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">Olá, {primeiroNome} 👋</h1>
+          {perfil?.slug && (
+            <p className="mt-1 text-sm text-slate-500">
+              Página pública:{' '}
+              <a
+                href={`/${perfil.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-primario hover:underline"
+              >
+                /{perfil.slug}
+              </a>
+            </p>
+          )}
+        </div>
       </div>
 
       {carregando ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
+            <Esqueleto key={i} className="h-24" />
           ))}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <CardEstatistica rotulo="Alunos" valor={totais.alunos} cor="text-primario" para="/painel/alunos" />
-          <CardEstatistica rotulo="Pacientes" valor={totais.pacientes} cor="text-rose-600" para="/painel/pacientes" />
-          <CardEstatistica rotulo="Cursos publicados" valor={totais.cursos} cor="text-destaque" para="/painel/cursos" />
-          <CardEstatistica rotulo="Consultas agendadas" valor={totais.consultas} cor="text-amber-600" para="/painel/consultas" />
+          <CardStat
+            rotulo="Alunos"
+            valor={totais.alunos}
+            cor="bg-teal-50 text-primario"
+            svg="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            para="/painel/alunos"
+          />
+          <CardStat
+            rotulo="Pacientes"
+            valor={totais.pacientes}
+            cor="bg-rose-50 text-rose-600"
+            svg="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            para="/painel/pacientes"
+          />
+          <CardStat
+            rotulo="Cursos publicados"
+            valor={totais.cursos}
+            cor="bg-blue-50 text-blue-600"
+            svg="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            para="/painel/cursos"
+          />
+          <CardStat
+            rotulo="Consultas agendadas"
+            valor={totais.consultas}
+            cor="bg-amber-50 text-amber-600"
+            svg="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            para="/painel/consultas"
+          />
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Acesso rápido</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { rotulo: 'Cadastrar aluno', para: '/painel/alunos' },
-            { rotulo: 'Agendar consulta', para: '/painel/consultas' },
-            { rotulo: 'Criar curso', para: '/painel/cursos' },
-            { rotulo: 'Ver interesses', para: '/painel/interesses' },
-            { rotulo: 'Editar perfil', para: '/painel/perfil' },
-            { rotulo: 'Log de auditoria', para: '/painel/auditoria' },
-          ].map((item) => (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-400">Acesso rápido</p>
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          {ACESSO_RAPIDO.map((item) => (
             <Link
               key={item.para}
               to={item.para}
-              className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:border-primario hover:text-primario"
+              className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-primario hover:bg-teal-50 hover:text-primario"
             >
-              {item.rotulo} →
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d={item.svg} />
+              </svg>
+              {item.rotulo}
             </Link>
           ))}
         </div>

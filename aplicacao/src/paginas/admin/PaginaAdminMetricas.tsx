@@ -1,28 +1,54 @@
 import { useEffect, useState } from 'react';
 import { requisitarApi } from '../../servicos/api';
+import { CartaoEsqueleto } from '../../componentes/ui/Esqueleto';
 import type { MetricasAdmin } from '../../tipos/admin';
 import { formatarReais } from '../../utilitarios/moeda';
 
-function CardMetrica({ rotulo, valor, sub }: { rotulo: string; valor: string; sub?: string }) {
+function CardMetrica({
+  rotulo,
+  valor,
+  sub,
+  cor = 'bg-slate-50 text-slate-600',
+}: {
+  rotulo: string;
+  valor: string;
+  sub?: string;
+  cor?: string;
+}) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{rotulo}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-800">{valor}</p>
-      {sub && <p className="mt-0.5 text-xs text-slate-400">{sub}</p>}
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{rotulo}</p>
+      <p className={`mt-1.5 text-2xl font-bold ${cor}`}>{valor}</p>
+      {sub && <p className="mt-1 text-xs text-slate-400">{sub}</p>}
     </div>
   );
 }
 
-function BarraPlano({ rotulo, valor, total, cor }: { rotulo: string; valor: number; total: number; cor: string }) {
+function BarraPlano({
+  rotulo,
+  valor,
+  total,
+  cor,
+}: {
+  rotulo: string;
+  valor: number;
+  total: number;
+  cor: string;
+}) {
   const pct = total > 0 ? Math.round((valor / total) * 100) : 0;
   return (
     <div>
-      <div className="mb-1 flex justify-between text-sm">
+      <div className="mb-1.5 flex justify-between text-sm">
         <span className="font-medium text-slate-700">{rotulo}</span>
-        <span className="text-slate-500">{valor} ({pct}%)</span>
+        <span className="text-slate-400">
+          {valor} <span className="text-slate-300">·</span> {pct}%
+        </span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full rounded-full ${cor}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${cor}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -42,15 +68,22 @@ export function PaginaAdminMetricas() {
 
   if (carregando) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
-        ))}
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(8)].map((_, i) => (
+            <CartaoEsqueleto key={i} />
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (erro) return <p className="text-red-600">{erro}</p>;
+  if (erro) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{erro}</div>
+    );
+  }
+
   if (!metricas) return null;
 
   const totalPlanos =
@@ -58,81 +91,87 @@ export function PaginaAdminMetricas() {
     metricas.profissionais.porPlano.PRO +
     metricas.profissionais.porPlano.STANDARD;
 
+  const pagos = metricas.profissionais.porPlano.PRO + metricas.profissionais.porPlano.STANDARD;
+  const ticketMedio = pagos > 0 ? Math.round(metricas.receita.mrrCentavos / pagos) : 0;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-up">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Métricas da Plataforma</h1>
-        <p className="mt-1 text-sm text-slate-500">Visão geral em tempo real</p>
+        <h1 className="text-xl font-bold text-slate-800">Métricas da Plataforma</h1>
+        <p className="mt-1 text-sm text-slate-400">Visão geral em tempo real</p>
       </div>
 
-      {/* Receita */}
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Receita</h2>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Receita</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <CardMetrica
             rotulo="MRR"
             valor={formatarReais(metricas.receita.mrrCentavos)}
             sub="Receita mensal recorrente"
+            cor="text-primario"
           />
           <CardMetrica
             rotulo="ARR"
             valor={formatarReais(metricas.receita.arrCentavos)}
             sub="Receita anual recorrente"
+            cor="text-primario"
           />
           <CardMetrica
             rotulo="Profissionais pagos"
-            valor={String(metricas.profissionais.porPlano.PRO + metricas.profissionais.porPlano.STANDARD)}
+            valor={String(pagos)}
             sub="Planos Pro e Standard"
           />
           <CardMetrica
             rotulo="Ticket SaaS médio"
-            valor={formatarReais(
-              metricas.profissionais.porPlano.PRO + metricas.profissionais.porPlano.STANDARD > 0
-                ? Math.round(
-                    metricas.receita.mrrCentavos /
-                      (metricas.profissionais.porPlano.PRO + metricas.profissionais.porPlano.STANDARD),
-                  )
-                : 0,
-            )}
+            valor={formatarReais(ticketMedio)}
             sub="Sem comissão sobre cursos"
           />
         </div>
       </div>
 
-      {/* Assinaturas */}
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Assinaturas</h2>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Assinaturas e usuários</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <CardMetrica
             rotulo="Churn (30 dias)"
             valor={`${metricas.assinaturas.churnRate30Dias}%`}
             sub={`${metricas.assinaturas.canceladas30Dias} cancelamentos`}
+            cor={metricas.assinaturas.churnRate30Dias > 5 ? 'text-red-600' : 'text-slate-800'}
           />
           <CardMetrica
             rotulo="Novos (mês atual)"
             valor={String(metricas.profissionais.novosMesAtual)}
             sub="Profissionais cadastrados"
+            cor="text-slate-800"
           />
-          <CardMetrica
-            rotulo="Total alunos"
-            valor={String(metricas.usuarios.totalAlunos)}
-          />
-          <CardMetrica
-            rotulo="Total pacientes"
-            valor={String(metricas.usuarios.totalPacientes)}
-          />
+          <CardMetrica rotulo="Total alunos" valor={String(metricas.usuarios.totalAlunos)} />
+          <CardMetrica rotulo="Total pacientes" valor={String(metricas.usuarios.totalPacientes)} />
         </div>
       </div>
 
-      {/* Distribuição por plano */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+        <p className="mb-5 text-xs font-semibold uppercase tracking-widest text-slate-400">
           Distribuição por plano — {metricas.profissionais.total} profissionais
-        </h2>
+        </p>
         <div className="space-y-4">
-          <BarraPlano rotulo="Gratuito" valor={metricas.profissionais.porPlano.GRATUITO} total={totalPlanos} cor="bg-slate-400" />
-          <BarraPlano rotulo="PRO" valor={metricas.profissionais.porPlano.PRO} total={totalPlanos} cor="bg-destaque" />
-          <BarraPlano rotulo="Standard" valor={metricas.profissionais.porPlano.STANDARD} total={totalPlanos} cor="bg-primario" />
+          <BarraPlano
+            rotulo="Gratuito"
+            valor={metricas.profissionais.porPlano.GRATUITO}
+            total={totalPlanos}
+            cor="bg-slate-400"
+          />
+          <BarraPlano
+            rotulo="PRO"
+            valor={metricas.profissionais.porPlano.PRO}
+            total={totalPlanos}
+            cor="bg-blue-500"
+          />
+          <BarraPlano
+            rotulo="Standard"
+            valor={metricas.profissionais.porPlano.STANDARD}
+            total={totalPlanos}
+            cor="bg-primario"
+          />
         </div>
       </div>
     </div>
