@@ -11,6 +11,7 @@ describe('CursosServico', () => {
       create: jest.fn(),
       findMany: jest.fn(),
       findFirst: jest.fn(),
+      update: jest.fn(),
     },
     moduloCurso: {
       count: jest.fn(),
@@ -135,6 +136,56 @@ describe('CursosServico', () => {
         precoCentavos: 0,
       }),
     ).rejects.toThrow(ConflictException);
+  });
+
+  it('atualiza curso do profissional com dados normalizados', async () => {
+    const cursoAtualizado = {
+      id: cursoId,
+      titulo: 'Curso atualizado',
+      slug: 'curso-atualizado',
+      status: StatusCurso.PUBLICADO,
+    };
+    prismaServico.curso.findFirst.mockResolvedValue({ id: cursoId, publicadoEm: null });
+    prismaServico.curso.update.mockResolvedValue(cursoAtualizado);
+
+    await expect(
+      servico.atualizar(profissionalId, cursoId, {
+        titulo: ' Curso atualizado ',
+        slug: ' CURSO-ATUALIZADO ',
+        descricao: ' Nova descrição ',
+        precoCentavos: 25000,
+        status: StatusCurso.PUBLICADO,
+      }),
+    ).resolves.toEqual(cursoAtualizado);
+
+    expect(prismaServico.curso.update).toHaveBeenCalledWith({
+      where: { id: cursoId },
+      data: expect.objectContaining({
+        titulo: 'Curso atualizado',
+        slug: 'curso-atualizado',
+        descricao: 'Nova descrição',
+        precoCentavos: 25000,
+        status: StatusCurso.PUBLICADO,
+        publicadoEm: expect.any(Date),
+      }),
+      select: cursoSelect,
+    });
+  });
+
+  it('exclui curso com soft delete e arquivamento', async () => {
+    prismaServico.curso.findFirst.mockResolvedValue({ id: cursoId, publicadoEm: new Date() });
+    prismaServico.curso.update.mockResolvedValue({ id: cursoId });
+
+    await expect(servico.excluir(profissionalId, cursoId)).resolves.toEqual({ id: cursoId });
+
+    expect(prismaServico.curso.update).toHaveBeenCalledWith({
+      where: { id: cursoId },
+      data: {
+        excluidoEm: expect.any(Date),
+        status: StatusCurso.ARQUIVADO,
+      },
+      select: { id: true },
+    });
   });
 
   it('lista módulos após validar curso do tenant', async () => {

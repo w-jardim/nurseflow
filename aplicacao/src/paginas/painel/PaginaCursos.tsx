@@ -43,6 +43,33 @@ export function PaginaCursos() {
     setCursos((c) => [curso, ...c]);
   }
 
+  async function atualizarCurso(id: string, dados: {
+    titulo: string; slug: string; descricao: string;
+    modalidade: ModalidadeCurso; precoCentavos: number; status: StatusCurso;
+  }) {
+    const curso = await requisitarApi<Curso>(`/cursos/${id}`, {
+      metodo: 'PUT',
+      autenticada: true,
+      corpo: {
+        titulo: dados.titulo,
+        slug: dados.slug,
+        descricao: dados.descricao || undefined,
+        modalidade: dados.modalidade,
+        precoCentavos: dados.precoCentavos,
+        status: dados.status,
+      },
+    });
+    setCursos((atuais) => atuais.map((atual) => (atual.id === id ? curso : atual)));
+  }
+
+  async function excluirCurso(id: string) {
+    await requisitarApi<{ id: string }>(`/cursos/${id}`, {
+      metodo: 'DELETE',
+      autenticada: true,
+    });
+    setCursos((atuais) => atuais.filter((curso) => curso.id !== id));
+  }
+
   async function inscreverAluno(dados: { cursoId: string; alunoId: string }) {
     return requisitarApi<InscricaoCurso>(`/cursos/${dados.cursoId}/inscricoes`, {
       metodo: 'POST',
@@ -58,7 +85,14 @@ export function PaginaCursos() {
 
   return (
     <div className="space-y-6">
-      <PainelCursos cursos={cursos} alunos={alunos} aoCriar={criarCurso} aoInscrever={inscreverAluno} />
+      <PainelCursos
+        cursos={cursos}
+        alunos={alunos}
+        aoAtualizar={atualizarCurso}
+        aoCriar={criarCurso}
+        aoExcluir={excluirCurso}
+        aoInscrever={inscreverAluno}
+      />
       <PainelConteudoCurso cursos={cursos} />
     </div>
   );

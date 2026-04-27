@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { PapelUsuario } from '@prisma/client';
 import { Papeis } from '../../comum/decoradores/papeis.decorador';
 import { UsuarioAtual } from '../../comum/decoradores/usuario-atual.decorador';
@@ -8,6 +8,7 @@ import { PapeisGuarda } from '../../comum/guardas/papeis.guarda';
 import type { UsuarioAutenticado } from '../../comum/tipos/requisicao-autenticada';
 import { AuditoriaServico } from '../auditoria/auditoria.servico';
 import { CursosServico } from './cursos.servico';
+import { AtualizarCursoDto } from './dto/atualizar-curso.dto';
 import { CriarAulaCursoDto } from './dto/criar-aula-curso.dto';
 import { CriarCursoDto } from './dto/criar-curso.dto';
 import { CriarInscricaoCursoDto } from './dto/criar-inscricao-curso.dto';
@@ -45,6 +46,46 @@ export class CursosControlador {
     });
 
     return curso;
+  }
+
+  @Put(':cursoId')
+  async atualizar(
+    @UsuarioAtual() usuario: UsuarioAutenticado,
+    @Param('cursoId') cursoId: string,
+    @Body() dados: AtualizarCursoDto,
+  ) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const curso = await this.cursosServico.atualizar(profissionalId, cursoId, dados);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.atualizado',
+      entidade: 'Curso',
+      entidadeId: curso.id,
+      metadados: {
+        status: curso.status,
+        modalidade: curso.modalidade,
+      },
+    });
+
+    return curso;
+  }
+
+  @Delete(':cursoId')
+  async excluir(@UsuarioAtual() usuario: UsuarioAutenticado, @Param('cursoId') cursoId: string) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const curso = await this.cursosServico.excluir(profissionalId, cursoId);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.excluido',
+      entidade: 'Curso',
+      entidadeId: curso.id,
+    });
+
+    return { id: curso.id };
   }
 
   @Get(':cursoId/modulos')

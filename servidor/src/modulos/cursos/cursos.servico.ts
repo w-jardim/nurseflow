@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { PrismaServico } from '../../comum/prisma/prisma.servico';
 import { CriarAulaCursoDto } from './dto/criar-aula-curso.dto';
+import { AtualizarCursoDto } from './dto/atualizar-curso.dto';
 import { CriarCursoDto } from './dto/criar-curso.dto';
 import { CriarInscricaoCursoDto } from './dto/criar-inscricao-curso.dto';
 import { CriarModuloCursoDto } from './dto/criar-modulo-curso.dto';
@@ -65,6 +66,61 @@ export class CursosServico {
 
       throw erro;
     }
+  }
+
+  async atualizar(profissionalId: string, cursoId: string, dados: AtualizarCursoDto) {
+    const cursoAtual = await this.obterCursoDoTenantComPublicacao(profissionalId, cursoId);
+    const status = dados.status;
+
+    try {
+      return await this.prisma.curso.update({
+        where: {
+          id: cursoAtual.id,
+        },
+        data: {
+          ...(dados.titulo !== undefined ? { titulo: dados.titulo.trim() } : {}),
+          ...(dados.slug !== undefined ? { slug: dados.slug.trim().toLowerCase() } : {}),
+          ...(dados.descricao !== undefined ? { descricao: dados.descricao.trim() || null } : {}),
+          ...(dados.modalidade !== undefined ? { modalidade: dados.modalidade } : {}),
+          ...(dados.precoCentavos !== undefined ? { precoCentavos: dados.precoCentavos } : {}),
+          ...(status !== undefined
+            ? {
+                status,
+                publicadoEm:
+                  status === StatusCurso.PUBLICADO && !cursoAtual.publicadoEm
+                    ? new Date()
+                    : status === StatusCurso.RASCUNHO
+                      ? null
+                      : cursoAtual.publicadoEm,
+              }
+            : {}),
+        },
+        select: CURSO_SELECT,
+      });
+    } catch (erro) {
+      if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
+        throw new ConflictException('Endereço do curso já cadastrado para este profissional.');
+      }
+
+      throw erro;
+    }
+  }
+
+  async excluir(profissionalId: string, cursoId: string) {
+    const curso = await this.obterCursoDoTenant(profissionalId, cursoId);
+
+    return this.prisma.curso.update({
+      where: {
+        id: curso.id,
+      },
+      data: {
+        excluidoEm: new Date(),
+        status: StatusCurso.ARQUIVADO,
+      },
+      select: {
+        id: true,
+      },
+    });
   }
 
   async listarModulos(profissionalId: string, cursoId: string) {
@@ -518,6 +574,26 @@ export class CursosServico {
       },
       select: {
         id: true,
+      },
+    });
+
+    if (!curso) {
+      throw new NotFoundException('Curso não encontrado.');
+    }
+
+    return curso;
+  }
+
+  private async obterCursoDoTenantComPublicacao(profissionalId: string, cursoId: string) {
+    const curso = await this.prisma.curso.findFirst({
+      where: {
+        id: cursoId,
+        profissionalId,
+        excluidoEm: null,
+      },
+      select: {
+        id: true,
+        publicadoEm: true,
       },
     });
 
