@@ -60,6 +60,10 @@ export class ConsultasServico {
       throw new NotFoundException('Paciente não encontrado para este profissional.');
     }
 
+    if (!dados.permitirSobreposicao) {
+      await this.garantirHorarioDisponivel(profissionalId, inicioEm, fimEm);
+    }
+
     return this.prisma.consulta.create({
       data: {
         profissionalId,
@@ -71,5 +75,52 @@ export class ConsultasServico {
       },
       select: CONSULTA_SELECT,
     });
+  }
+
+  private async garantirHorarioDisponivel(profissionalId: string, inicioEm: Date, fimEm: Date) {
+    const [consultaConflitante, consultoriaConflitante] = await Promise.all([
+      this.prisma.consulta.findFirst({
+        where: {
+          profissionalId,
+          status: {
+            not: StatusConsulta.CANCELADA,
+          },
+          inicioEm: {
+            lt: fimEm,
+          },
+          fimEm: {
+            gt: inicioEm,
+          },
+        },
+        select: {
+          id: true,
+        },
+      }),
+      this.prisma.consultoria.findFirst({
+        where: {
+          profissionalId,
+          status: {
+            not: StatusConsulta.CANCELADA,
+          },
+          inicioEm: {
+            not: null,
+            lt: fimEm,
+          },
+          fimEm: {
+            not: null,
+            gt: inicioEm,
+          },
+        },
+        select: {
+          id: true,
+        },
+      }),
+    ]);
+
+    if (consultaConflitante || consultoriaConflitante) {
+      throw new BadRequestException(
+        'Já existe atendimento neste horário. Confirme a sobreposição para salvar mesmo assim.',
+      );
+    }
   }
 }

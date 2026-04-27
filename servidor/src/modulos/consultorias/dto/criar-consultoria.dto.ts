@@ -1,6 +1,8 @@
 import {
   IsEnum,
   IsInt,
+  IsBoolean,
+  IsDateString,
   IsOptional,
   IsString,
   Max,
@@ -8,7 +10,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ModalidadeConsultoria } from '@prisma/client';
+import { ModalidadeConsultoria, StatusConsulta } from '@prisma/client';
 
 export class CriarConsultoriaDto {
   @IsString()
@@ -28,4 +30,25 @@ export class CriarConsultoriaDto {
   @Min(0)
   @Max(100000000)
   precoCentavos!: number;
+
+  @IsOptional()
+  @IsDateString()
+  inicioEm?: string;
+
+  @IsOptional()
+  @IsDateString()
+  fimEm?: string;
+
+  @IsOptional()
+  @IsEnum(StatusConsulta)
+  status?: StatusConsulta;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  observacoes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  permitirSobreposicao?: boolean;
 }

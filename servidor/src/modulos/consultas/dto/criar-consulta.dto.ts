@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { StatusConsulta } from '@prisma/client';
 
 export class CriarConsultaDto {
@@ -19,4 +19,8 @@ export class CriarConsultaDto {
   @IsString()
   @MaxLength(1000)
   observacoes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  permitirSobreposicao?: boolean;
 }

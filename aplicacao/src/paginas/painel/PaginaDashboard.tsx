@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSessao } from '../../contextos/SessaoContexto';
 import { requisitarApi } from '../../servicos/api';
+import { AgendaCalendario, type ItemAgenda } from '../../componentes/AgendaCalendario';
 import { Esqueleto } from '../../componentes/ui/Esqueleto';
 import type { Contato } from '../../tipos/contatos';
 import type { Curso } from '../../tipos/cursos';
 import type { Consulta } from '../../tipos/consultas';
+import type { Consultoria } from '../../tipos/consultorias';
 
 type Stat = { rotulo: string; valor: number | string; cor: string; svg: string; para: string };
 
@@ -43,6 +45,7 @@ export function PaginaDashboard() {
   if (usuario?.papel === 'SUPER_ADMIN') return <Navigate to="/admin" replace />;
 
   const [totais, setTotais] = useState({ alunos: 0, pacientes: 0, cursos: 0, consultas: 0 });
+  const [agenda, setAgenda] = useState<ItemAgenda[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -51,14 +54,39 @@ export function PaginaDashboard() {
       requisitarApi<Contato[]>('/pacientes', { autenticada: true }),
       requisitarApi<Curso[]>('/cursos', { autenticada: true }),
       requisitarApi<Consulta[]>('/consultas', { autenticada: true }),
+      requisitarApi<Consultoria[]>('/consultorias', { autenticada: true }),
     ])
-      .then(([alunos, pacientes, cursos, consultas]) => {
+      .then(([alunos, pacientes, cursos, consultas, consultorias]) => {
         setTotais({
           alunos: alunos.length,
           pacientes: pacientes.length,
           cursos: cursos.filter((c) => c.status === 'PUBLICADO').length,
           consultas: consultas.filter((c) => c.status === 'AGENDADA').length,
         });
+        setAgenda([
+          ...consultas.map((consulta) => ({
+            id: consulta.id,
+            tipo: 'consulta' as const,
+            titulo: [consulta.paciente.nome, consulta.paciente.sobrenome].filter(Boolean).join(' '),
+            subtitulo: consulta.paciente.telefone ?? consulta.paciente.email,
+            inicioEm: consulta.inicioEm,
+            fimEm: consulta.fimEm,
+            status: consulta.status,
+            para: '/painel/consultas',
+          })),
+          ...consultorias
+            .filter((consultoria) => consultoria.inicioEm && consultoria.fimEm)
+            .map((consultoria) => ({
+              id: consultoria.id,
+              tipo: 'consultoria' as const,
+              titulo: consultoria.titulo,
+              subtitulo: consultoria.modalidade === 'ONLINE' ? 'Online' : 'Presencial',
+              inicioEm: consultoria.inicioEm as string,
+              fimEm: consultoria.fimEm as string,
+              status: consultoria.status,
+              para: '/painel/consultorias',
+            })),
+        ]);
       })
       .catch(() => {})
       .finally(() => setCarregando(false));
@@ -143,6 +171,14 @@ export function PaginaDashboard() {
           ))}
         </div>
       </div>
+
+      <AgendaCalendario
+        itens={agenda}
+        titulo="Calendário da semana"
+        descricao="Consultas e consultorias ficam juntas para proteger seus horários."
+        compacto
+        acao={{ rotulo: 'Abrir agenda', para: '/painel/consultas' }}
+      />
     </div>
   );
 }
