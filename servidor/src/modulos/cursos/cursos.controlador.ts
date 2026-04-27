@@ -1,0 +1,168 @@
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { PapelUsuario } from '@prisma/client';
+import { Papeis } from '../../comum/decoradores/papeis.decorador';
+import { UsuarioAtual } from '../../comum/decoradores/usuario-atual.decorador';
+import { obterTenantObrigatorio } from '../../comum/erros/tenant-obrigatorio';
+import { JwtAuthGuarda } from '../../comum/guardas/jwt-auth.guarda';
+import { PapeisGuarda } from '../../comum/guardas/papeis.guarda';
+import type { UsuarioAutenticado } from '../../comum/tipos/requisicao-autenticada';
+import { AuditoriaServico } from '../auditoria/auditoria.servico';
+import { CursosServico } from './cursos.servico';
+import { AtualizarCursoDto } from './dto/atualizar-curso.dto';
+import { CriarAulaCursoDto } from './dto/criar-aula-curso.dto';
+import { CriarCursoDto } from './dto/criar-curso.dto';
+import { CriarInscricaoCursoDto } from './dto/criar-inscricao-curso.dto';
+import { CriarModuloCursoDto } from './dto/criar-modulo-curso.dto';
+
+@Controller('cursos')
+@UseGuards(JwtAuthGuarda, PapeisGuarda)
+@Papeis(PapelUsuario.PROFISSIONAL)
+export class CursosControlador {
+  constructor(
+    private readonly cursosServico: CursosServico,
+    private readonly auditoriaServico: AuditoriaServico,
+  ) {}
+
+  @Get()
+  listar(@UsuarioAtual() usuario: UsuarioAutenticado) {
+    return this.cursosServico.listar(obterTenantObrigatorio(usuario));
+  }
+
+  @Post()
+  async criar(@UsuarioAtual() usuario: UsuarioAutenticado, @Body() dados: CriarCursoDto) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const curso = await this.cursosServico.criar(profissionalId, dados);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.criado',
+      entidade: 'Curso',
+      entidadeId: curso.id,
+      metadados: {
+        status: curso.status,
+        modalidade: curso.modalidade,
+      },
+    });
+
+    return curso;
+  }
+
+  @Put(':cursoId')
+  async atualizar(
+    @UsuarioAtual() usuario: UsuarioAutenticado,
+    @Param('cursoId') cursoId: string,
+    @Body() dados: AtualizarCursoDto,
+  ) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const curso = await this.cursosServico.atualizar(profissionalId, cursoId, dados);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.atualizado',
+      entidade: 'Curso',
+      entidadeId: curso.id,
+      metadados: {
+        status: curso.status,
+        modalidade: curso.modalidade,
+      },
+    });
+
+    return curso;
+  }
+
+  @Delete(':cursoId')
+  async excluir(@UsuarioAtual() usuario: UsuarioAutenticado, @Param('cursoId') cursoId: string) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const curso = await this.cursosServico.excluir(profissionalId, cursoId);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.excluido',
+      entidade: 'Curso',
+      entidadeId: curso.id,
+    });
+
+    return { id: curso.id };
+  }
+
+  @Get(':cursoId/modulos')
+  listarModulos(@UsuarioAtual() usuario: UsuarioAutenticado, @Param('cursoId') cursoId: string) {
+    return this.cursosServico.listarModulos(obterTenantObrigatorio(usuario), cursoId);
+  }
+
+  @Post(':cursoId/modulos')
+  async criarModulo(
+    @UsuarioAtual() usuario: UsuarioAutenticado,
+    @Param('cursoId') cursoId: string,
+    @Body() dados: CriarModuloCursoDto,
+  ) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const modulo = await this.cursosServico.criarModulo(profissionalId, cursoId, dados);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.modulo_criado',
+      entidade: 'ModuloCurso',
+      entidadeId: modulo.id,
+      metadados: {
+        cursoId,
+      },
+    });
+
+    return modulo;
+  }
+
+  @Post(':cursoId/inscricoes')
+  async criarInscricao(
+    @UsuarioAtual() usuario: UsuarioAutenticado,
+    @Param('cursoId') cursoId: string,
+    @Body() dados: CriarInscricaoCursoDto,
+  ) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const inscricao = await this.cursosServico.criarInscricao(profissionalId, cursoId, dados);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.inscricao_criada',
+      entidade: 'InscricaoCurso',
+      entidadeId: inscricao.id,
+      metadados: {
+        cursoId,
+        alunoId: dados.alunoId,
+        origem: 'pagamento_direto_confirmado',
+      },
+    });
+
+    return inscricao;
+  }
+
+  @Post(':cursoId/modulos/:moduloId/aulas')
+  async criarAula(
+    @UsuarioAtual() usuario: UsuarioAutenticado,
+    @Param('cursoId') cursoId: string,
+    @Param('moduloId') moduloId: string,
+    @Body() dados: CriarAulaCursoDto,
+  ) {
+    const profissionalId = obterTenantObrigatorio(usuario);
+    const aula = await this.cursosServico.criarAula(profissionalId, cursoId, moduloId, dados);
+
+    await this.auditoriaServico.registrar({
+      profissionalId,
+      usuarioId: usuario.sub,
+      acao: 'curso.aula_criada',
+      entidade: 'AulaCurso',
+      entidadeId: aula.id,
+      metadados: {
+        cursoId,
+        moduloId,
+      },
+    });
+
+    return aula;
+  }
+}

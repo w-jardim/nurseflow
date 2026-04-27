@@ -1,0 +1,445 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PapelUsuario {
+  SUPER_ADMIN
+  PROFISSIONAL
+  ALUNO
+  PACIENTE
+}
+
+enum PlanoProfissional {
+  GRATUITO
+  PRO
+  STANDARD
+}
+
+enum StatusAssinatura {
+  ATIVA
+  INADIMPLENTE
+  CANCELADA
+  EXPIRADA
+}
+
+enum StatusCurso {
+  RASCUNHO
+  PUBLICADO
+  ARQUIVADO
+}
+
+enum ModalidadeCurso {
+  ONLINE
+  PRESENCIAL
+}
+
+enum StatusConsulta {
+  AGENDADA
+  CONFIRMADA
+  CANCELADA
+  CONCLUIDA
+}
+
+enum StatusPagamento {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  ESTORNADO
+}
+
+enum ModalidadeConsultoria {
+  ONLINE
+  PRESENCIAL
+}
+
+enum OrigemInteresse {
+  PERFIL
+  CURSO
+  CONSULTORIA
+  SERVICO
+}
+
+enum StatusSolicitacao {
+  PENDENTE
+  CONFIRMADA
+  CANCELADA
+}
+
+model Usuario {
+  id                 String        @id @default(uuid()) @db.Uuid
+  nome               String        @db.VarChar(120)
+  email              String        @unique @db.VarChar(255)
+  senhaHash          String        @map("senha_hash")
+  papel              PapelUsuario
+  profissionalId     String?       @map("profissional_id") @db.Uuid
+  ativo              Boolean       @default(true)
+  ultimoAcessoEm     DateTime?     @map("ultimo_acesso_em")
+  criadoEm           DateTime      @default(now()) @map("criado_em")
+  atualizadoEm       DateTime      @updatedAt @map("atualizado_em")
+  excluidoEm         DateTime?     @map("excluido_em")
+
+  profissional       Profissional? @relation("UsuariosDoProfissional", fields: [profissionalId], references: [id])
+  perfilProfissional Profissional? @relation("UsuarioDonoProfissional")
+  aluno              Aluno?
+  paciente           Paciente?
+  logsAuditoria      LogAuditoria[]
+
+  @@index([profissionalId])
+  @@map("usuarios")
+}
+
+model Profissional {
+  id                 String             @id @default(uuid()) @db.Uuid
+  usuarioDonoId      String             @unique @map("usuario_dono_id") @db.Uuid
+  nomePublico        String             @map("nome_publico") @db.VarChar(120)
+  slug               String             @unique @db.VarChar(80)
+  subdominio         String?            @unique @db.VarChar(80)
+  bio                String?
+  documento          String?            @db.VarChar(32)
+  conselho           String?            @db.VarChar(40)
+  telefone           String?            @db.VarChar(24)
+  pixChave           String?            @map("pix_chave") @db.VarChar(160)
+  linkPagamento      String?            @map("link_pagamento") @db.VarChar(500)
+  instrucoesPagamento String?           @map("instrucoes_pagamento")
+  plano              PlanoProfissional  @default(GRATUITO)
+  statusAssinatura   StatusAssinatura   @default(ATIVA) @map("status_assinatura")
+  criadoEm           DateTime           @default(now()) @map("criado_em")
+  atualizadoEm       DateTime           @updatedAt @map("atualizado_em")
+  excluidoEm         DateTime?          @map("excluido_em")
+
+  usuarioDono        Usuario            @relation("UsuarioDonoProfissional", fields: [usuarioDonoId], references: [id])
+  usuarios           Usuario[]          @relation("UsuariosDoProfissional")
+  alunos             Aluno[]
+  pacientes          Paciente[]
+  cursos             Curso[]
+  consultas          Consulta[]
+  consultorias       Consultoria[]
+  servicos           Servico[]
+  interesses         InteressePublico[]
+  solicitacoes       SolicitacaoAgendamento[]
+  assinaturas        Assinatura[]
+  transacoes         Transacao[]
+  configuracaoPagina ConfiguracaoPagina?
+  logsAuditoria      LogAuditoria[]
+
+  @@map("profissionais")
+}
+
+model Aluno {
+  id             String          @id @default(uuid()) @db.Uuid
+  profissionalId String          @map("profissional_id") @db.Uuid
+  usuarioId      String?         @unique @map("usuario_id") @db.Uuid
+  nome           String          @db.VarChar(120)
+  sobrenome      String?         @db.VarChar(120)
+  email          String          @db.VarChar(255)
+  cpf            String?         @db.VarChar(11)
+  telefone       String?         @db.VarChar(24)
+  criadoEm       DateTime        @default(now()) @map("criado_em")
+  atualizadoEm   DateTime        @updatedAt @map("atualizado_em")
+  excluidoEm     DateTime?       @map("excluido_em")
+
+  profissional   Profissional    @relation(fields: [profissionalId], references: [id])
+  usuario        Usuario?        @relation(fields: [usuarioId], references: [id])
+  inscricoes     InscricaoCurso[]
+  @@unique([profissionalId, email])
+  @@unique([profissionalId, cpf])
+  @@index([profissionalId, nome])
+  @@map("alunos")
+}
+
+model Paciente {
+  id             String       @id @default(uuid()) @db.Uuid
+  profissionalId String       @map("profissional_id") @db.Uuid
+  usuarioId      String?      @unique @map("usuario_id") @db.Uuid
+  nome           String       @db.VarChar(120)
+  sobrenome      String?      @db.VarChar(120)
+  cpf            String?      @db.VarChar(11)
+  email          String?      @db.VarChar(255)
+  telefone       String?      @db.VarChar(24)
+  cep            String?      @db.VarChar(8)
+  logradouro     String?      @db.VarChar(160)
+  numero         String?      @db.VarChar(20)
+  complemento    String?      @db.VarChar(80)
+  bairro         String?      @db.VarChar(80)
+  cidade         String?      @db.VarChar(80)
+  uf             String?      @db.VarChar(2)
+  criadoEm       DateTime     @default(now()) @map("criado_em")
+  atualizadoEm   DateTime     @updatedAt @map("atualizado_em")
+  excluidoEm     DateTime?    @map("excluido_em")
+
+  profissional   Profissional @relation(fields: [profissionalId], references: [id])
+  usuario        Usuario?     @relation(fields: [usuarioId], references: [id])
+  consultas      Consulta[]
+  @@index([profissionalId, nome])
+  @@unique([profissionalId, cpf])
+  @@map("pacientes")
+}
+
+model Curso {
+  id             String           @id @default(uuid()) @db.Uuid
+  profissionalId String           @map("profissional_id") @db.Uuid
+  titulo         String           @db.VarChar(160)
+  slug           String           @db.VarChar(100)
+  descricao      String?
+  modalidade     ModalidadeCurso  @default(ONLINE)
+  precoCentavos  Int              @default(0) @map("preco_centavos")
+  status         StatusCurso      @default(RASCUNHO)
+  publicadoEm    DateTime?        @map("publicado_em")
+  criadoEm       DateTime         @default(now()) @map("criado_em")
+  atualizadoEm   DateTime         @updatedAt @map("atualizado_em")
+  excluidoEm     DateTime?        @map("excluido_em")
+
+  profissional   Profissional     @relation(fields: [profissionalId], references: [id])
+  modulos        ModuloCurso[]
+  inscricoes     InscricaoCurso[]
+  interesses     InteressePublico[]
+
+  @@unique([profissionalId, slug])
+  @@index([profissionalId, status])
+  @@map("cursos")
+}
+
+model ModuloCurso {
+  id           String      @id @default(uuid()) @db.Uuid
+  cursoId      String      @map("curso_id") @db.Uuid
+  titulo       String      @db.VarChar(160)
+  ordem        Int
+  criadoEm     DateTime    @default(now()) @map("criado_em")
+  atualizadoEm DateTime    @updatedAt @map("atualizado_em")
+
+  curso        Curso       @relation(fields: [cursoId], references: [id])
+  aulas        AulaCurso[]
+
+  @@unique([cursoId, ordem])
+  @@map("modulos_curso")
+}
+
+model AulaCurso {
+  id                 String      @id @default(uuid()) @db.Uuid
+  moduloId           String      @map("modulo_id") @db.Uuid
+  titulo             String      @db.VarChar(160)
+  descricao          String?
+  conteudo           String?
+  imagemUrl          String?     @map("imagem_url")
+  materialUrl        String?     @map("material_url") @db.VarChar(500)
+  videoReferencia    String?     @map("video_referencia")
+  duracaoSegundos    Int?        @map("duracao_segundos")
+  ordem              Int
+  criadoEm           DateTime    @default(now()) @map("criado_em")
+  atualizadoEm       DateTime    @updatedAt @map("atualizado_em")
+
+  modulo             ModuloCurso @relation(fields: [moduloId], references: [id])
+  progressos         ProgressoAula[]
+
+  @@unique([moduloId, ordem])
+  @@map("aulas_curso")
+}
+
+model InscricaoCurso {
+  id             String          @id @default(uuid()) @db.Uuid
+  profissionalId String          @map("profissional_id") @db.Uuid
+  cursoId        String          @map("curso_id") @db.Uuid
+  alunoId        String          @map("aluno_id") @db.Uuid
+  transacaoId    String?         @unique @map("transacao_id") @db.Uuid
+  criadoEm       DateTime        @default(now()) @map("criado_em")
+  concluidoEm    DateTime?       @map("concluido_em")
+
+  curso          Curso           @relation(fields: [cursoId], references: [id])
+  aluno          Aluno           @relation(fields: [alunoId], references: [id])
+  transacao      Transacao?      @relation(fields: [transacaoId], references: [id])
+  progressos     ProgressoAula[]
+
+  @@unique([cursoId, alunoId])
+  @@index([profissionalId])
+  @@map("inscricoes_curso")
+}
+
+model ProgressoAula {
+  id             String          @id @default(uuid()) @db.Uuid
+  inscricaoId    String          @map("inscricao_id") @db.Uuid
+  aulaId         String          @map("aula_id") @db.Uuid
+  concluida      Boolean         @default(false)
+  atualizadoEm   DateTime        @updatedAt @map("atualizado_em")
+
+  inscricao      InscricaoCurso  @relation(fields: [inscricaoId], references: [id])
+  aula           AulaCurso       @relation(fields: [aulaId], references: [id])
+
+  @@unique([inscricaoId, aulaId])
+  @@map("progressos_aula")
+}
+
+model Consulta {
+  id             String         @id @default(uuid()) @db.Uuid
+  profissionalId String         @map("profissional_id") @db.Uuid
+  pacienteId     String         @map("paciente_id") @db.Uuid
+  inicioEm       DateTime       @map("inicio_em")
+  fimEm          DateTime       @map("fim_em")
+  status         StatusConsulta @default(AGENDADA)
+  observacoes    String?
+  criadoEm       DateTime       @default(now()) @map("criado_em")
+  atualizadoEm   DateTime       @updatedAt @map("atualizado_em")
+
+  profissional   Profissional   @relation(fields: [profissionalId], references: [id])
+  paciente       Paciente       @relation(fields: [pacienteId], references: [id])
+
+  @@index([profissionalId, inicioEm])
+  @@map("consultas")
+}
+
+model Consultoria {
+  id             String                @id @default(uuid()) @db.Uuid
+  profissionalId String                @map("profissional_id") @db.Uuid
+  titulo         String                @db.VarChar(160)
+  descricao      String?
+  modalidade     ModalidadeConsultoria @default(ONLINE)
+  precoCentavos  Int                   @default(0) @map("preco_centavos")
+  inicioEm       DateTime?             @map("inicio_em")
+  fimEm          DateTime?             @map("fim_em")
+  status         StatusConsulta        @default(AGENDADA)
+  observacoes    String?
+  criadoEm       DateTime              @default(now()) @map("criado_em")
+  atualizadoEm   DateTime              @updatedAt @map("atualizado_em")
+
+  profissional   Profissional          @relation(fields: [profissionalId], references: [id])
+  interesses     InteressePublico[]
+
+  @@index([profissionalId, modalidade])
+  @@index([profissionalId, inicioEm])
+  @@map("consultorias")
+}
+
+model Servico {
+  id             String             @id @default(uuid()) @db.Uuid
+  profissionalId String             @map("profissional_id") @db.Uuid
+  titulo         String             @db.VarChar(160)
+  descricao      String?
+  precoCentavos  Int                @default(0) @map("preco_centavos")
+  exibirPreco    Boolean            @default(true) @map("exibir_preco")
+  publicado      Boolean            @default(true)
+  criadoEm       DateTime           @default(now()) @map("criado_em")
+  atualizadoEm   DateTime           @updatedAt @map("atualizado_em")
+  excluidoEm     DateTime?          @map("excluido_em")
+
+  profissional   Profissional       @relation(fields: [profissionalId], references: [id])
+  interesses     InteressePublico[]
+
+  @@index([profissionalId, publicado])
+  @@map("servicos")
+}
+
+model InteressePublico {
+  id             String          @id @default(uuid()) @db.Uuid
+  profissionalId String          @map("profissional_id") @db.Uuid
+  cursoId        String?         @map("curso_id") @db.Uuid
+  consultoriaId  String?         @map("consultoria_id") @db.Uuid
+  servicoId      String?         @map("servico_id") @db.Uuid
+  origem         OrigemInteresse @default(PERFIL)
+  nome           String          @db.VarChar(120)
+  email          String          @db.VarChar(255)
+  telefone       String?         @db.VarChar(24)
+  mensagem       String?
+  visualizadoEm  DateTime?       @map("visualizado_em")
+  criadoEm       DateTime        @default(now()) @map("criado_em")
+
+  profissional   Profissional    @relation(fields: [profissionalId], references: [id])
+  curso          Curso?          @relation(fields: [cursoId], references: [id])
+  consultoria    Consultoria?    @relation(fields: [consultoriaId], references: [id])
+  servico        Servico?        @relation(fields: [servicoId], references: [id])
+
+  @@index([profissionalId, criadoEm])
+  @@index([cursoId])
+  @@index([consultoriaId])
+  @@index([servicoId])
+  @@map("interesses_publicos")
+}
+
+model Assinatura {
+  id                    String            @id @default(uuid()) @db.Uuid
+  profissionalId        String            @map("profissional_id") @db.Uuid
+  plano                 PlanoProfissional
+  status                StatusAssinatura  @default(ATIVA)
+  mercadoPagoReferencia String?           @map("mercado_pago_referencia")
+  proximaCobrancaEm     DateTime?         @map("proxima_cobranca_em")
+  criadoEm              DateTime          @default(now()) @map("criado_em")
+  atualizadoEm          DateTime          @updatedAt @map("atualizado_em")
+  canceladoEm           DateTime?         @map("cancelado_em")
+
+  profissional          Profissional      @relation(fields: [profissionalId], references: [id])
+
+  @@index([profissionalId, status])
+  @@map("assinaturas")
+}
+
+model Transacao {
+  id                    String           @id @default(uuid()) @db.Uuid
+  profissionalId        String           @map("profissional_id") @db.Uuid
+  valorCentavos         Int              @map("valor_centavos")
+  taxaPlataformaCentavos Int             @default(0) @map("taxa_plataforma_centavos")
+  status                StatusPagamento  @default(PENDENTE)
+  mercadoPagoReferencia String?          @map("mercado_pago_referencia")
+  criadoEm              DateTime         @default(now()) @map("criado_em")
+  atualizadoEm          DateTime         @updatedAt @map("atualizado_em")
+
+  profissional          Profissional     @relation(fields: [profissionalId], references: [id])
+  inscricao             InscricaoCurso?
+
+  @@index([profissionalId, status])
+  @@map("transacoes")
+}
+
+model ConfiguracaoPagina {
+  id             String       @id @default(uuid()) @db.Uuid
+  profissionalId String       @unique @map("profissional_id") @db.Uuid
+  corPrimaria    String       @default("#0f766e") @map("cor_primaria") @db.VarChar(16)
+  corDestaque    String       @default("#2563eb") @map("cor_destaque") @db.VarChar(16)
+  logoUrl        String?      @map("logo_url")
+  criadoEm       DateTime     @default(now()) @map("criado_em")
+  atualizadoEm   DateTime     @updatedAt @map("atualizado_em")
+
+  profissional   Profissional @relation(fields: [profissionalId], references: [id])
+
+  @@map("configuracoes_pagina")
+}
+
+model SolicitacaoAgendamento {
+  id              String            @id @default(uuid()) @db.Uuid
+  profissionalId  String            @map("profissional_id") @db.Uuid
+  nome            String            @db.VarChar(120)
+  email           String            @db.VarChar(255)
+  telefone        String?           @db.VarChar(24)
+  dataDesejada    DateTime          @map("data_desejada") @db.Date
+  horarioDesejado String?           @map("horario_desejado") @db.VarChar(10)
+  observacoes     String?           @db.VarChar(1000)
+  status          StatusSolicitacao @default(PENDENTE)
+  criadoEm        DateTime          @default(now()) @map("criado_em")
+  atualizadoEm    DateTime          @updatedAt @map("atualizado_em")
+
+  profissional    Profissional      @relation(fields: [profissionalId], references: [id])
+
+  @@index([profissionalId, criadoEm])
+  @@map("solicitacoes_agendamento")
+}
+
+model LogAuditoria {
+  id             String        @id @default(uuid()) @db.Uuid
+  profissionalId String?       @map("profissional_id") @db.Uuid
+  usuarioId      String?       @map("usuario_id") @db.Uuid
+  acao           String        @db.VarChar(120)
+  entidade       String?       @db.VarChar(120)
+  entidadeId     String?       @map("entidade_id") @db.VarChar(80)
+  ip             String?       @db.VarChar(64)
+  metadados      Json?
+  criadoEm       DateTime      @default(now()) @map("criado_em")
+
+  profissional   Profissional? @relation(fields: [profissionalId], references: [id])
+  usuario        Usuario?      @relation(fields: [usuarioId], references: [id])
+
+  @@index([profissionalId, criadoEm])
+  @@index([usuarioId, criadoEm])
+  @@map("logs_auditoria")
+}
