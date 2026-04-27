@@ -30,4 +30,13 @@ Thumbs.db
 # AIOX Local (AIOX)
 .aiox-core/local/
 .claude/settings.local.json
+.claude/worktrees/
 .aiox/install-log.txt
+
+# Disabled IDE configs (AIOX)
+.gemini/
+.cursor/
+.antigravity/
+
+# AIOX tool templates (not project templates)
+.env.example
