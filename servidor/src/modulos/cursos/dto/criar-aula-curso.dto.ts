@@ -13,6 +13,21 @@ export class CriarAulaCursoDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20000)
+  conteudo?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000000)
+  imagemUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  materialUrl?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(255)
   videoReferencia?: string;
 

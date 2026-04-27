@@ -215,6 +215,9 @@ model AulaCurso {
   moduloId           String      @map("modulo_id") @db.Uuid
   titulo             String      @db.VarChar(160)
   descricao          String?
+  conteudo           String?
+  imagemUrl          String?     @map("imagem_url")
+  materialUrl        String?     @map("material_url") @db.VarChar(500)
   videoReferencia    String?     @map("video_referencia")
   duracaoSegundos    Int?        @map("duracao_segundos")
   ordem              Int

@@ -57,6 +57,9 @@ export type AulaCurso = {
   id: string;
   titulo: string;
   descricao: string | null;
+  conteudo: string | null;
+  imagemUrl: string | null;
+  materialUrl: string | null;
   videoReferencia: string | null;
   duracaoSegundos: number | null;
   ordem: number;

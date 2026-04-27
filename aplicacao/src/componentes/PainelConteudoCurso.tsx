@@ -18,6 +18,10 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
   const [moduloAulaId, setModuloAulaId] = useState('');
   const [tituloAula, setTituloAula] = useState('');
   const [descricaoAula, setDescricaoAula] = useState('');
+  const [conteudoAula, setConteudoAula] = useState('');
+  const [imagemAulaUrl, setImagemAulaUrl] = useState('');
+  const [materialAulaUrl, setMaterialAulaUrl] = useState('');
+  const [videoReferencia, setVideoReferencia] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [salvandoModulo, setSalvandoModulo] = useState(false);
   const [salvandoAula, setSalvandoAula] = useState(false);
@@ -72,13 +76,24 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
       const aula = await requisitarApi<AulaCurso>(`/cursos/${cursoId}/modulos/${moduloAulaId}/aulas`, {
         metodo: 'POST',
         autenticada: true,
-        corpo: { titulo: tituloAula, descricao: descricaoAula || undefined },
+        corpo: {
+          titulo: tituloAula,
+          descricao: descricaoAula || undefined,
+          conteudo: conteudoAula || undefined,
+          imagemUrl: imagemAulaUrl || undefined,
+          materialUrl: materialAulaUrl || undefined,
+          videoReferencia: videoReferencia || undefined,
+        },
       });
       setModulos((prev) =>
         prev.map((m) => (m.id === moduloAulaId ? { ...m, aulas: [...m.aulas, aula] } : m)),
       );
       setTituloAula('');
       setDescricaoAula('');
+      setConteudoAula('');
+      setImagemAulaUrl('');
+      setMaterialAulaUrl('');
+      setVideoReferencia('');
       toast('Aula adicionada.');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível criar a aula.', 'erro');
@@ -87,12 +102,33 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
     }
   }
 
+  function selecionarImagemAula(arquivo: File | null) {
+    if (!arquivo) return;
+
+    if (!arquivo.type.startsWith('image/')) {
+      toast('Selecione um arquivo de imagem.', 'aviso');
+      return;
+    }
+
+    if (arquivo.size > 700 * 1024) {
+      toast('Use uma imagem de até 700 KB neste MVP.', 'aviso');
+      return;
+    }
+
+    const leitor = new FileReader();
+    leitor.onload = () => setImagemAulaUrl(String(leitor.result ?? ''));
+    leitor.onerror = () => toast('Não foi possível carregar a imagem.', 'erro');
+    leitor.readAsDataURL(arquivo);
+  }
+
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
         <div className="mb-5">
           <h2 className="font-semibold text-slate-800">Conteúdo do curso</h2>
-          <p className="mt-0.5 text-sm text-slate-500">Organize em módulos e aulas.</p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Organize módulos, aulas e materiais como uma apostila online.
+          </p>
         </div>
 
         <CampoSelect rotulo="Selecionar curso" value={cursoId} onChange={setCursoId}>
@@ -109,7 +145,7 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
         )}
 
         {cursoId && (
-          <div className="mt-5 grid gap-5 border-t border-slate-100 pt-5 lg:grid-cols-2">
+          <div className="mt-5 grid gap-5 border-t border-slate-100 pt-5 xl:grid-cols-[320px_1fr]">
             <form className="space-y-3" onSubmit={criarModulo}>
               <p className="text-sm font-semibold text-slate-700">Novo módulo</p>
               <Campo
@@ -131,38 +167,92 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
             </form>
 
             <form className="space-y-3" onSubmit={criarAula}>
-              <p className="text-sm font-semibold text-slate-700">Nova aula</p>
-              <CampoSelect
-                rotulo="Módulo"
-                value={moduloAulaId}
-                onChange={setModuloAulaId}
-                required
-              >
-                <option value="">Selecione</option>
-                {modulos.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.ordem}. {m.titulo}
-                  </option>
-                ))}
-              </CampoSelect>
-              <Campo
-                rotulo="Título da aula"
-                name="aula-titulo"
-                value={tituloAula}
-                onChange={(e) => setTituloAula(e.target.value)}
-                required
-              />
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Nova aula/apostila</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Escreva o conteúdo da aula, inclua imagem e links de apoio.
+                </p>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                <CampoSelect
+                  rotulo="Módulo"
+                  value={moduloAulaId}
+                  onChange={setModuloAulaId}
+                  required
+                >
+                  <option value="">Selecione</option>
+                  {modulos.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.ordem}. {m.titulo}
+                    </option>
+                  ))}
+                </CampoSelect>
+                <Campo
+                  rotulo="Título da aula"
+                  name="aula-titulo"
+                  value={tituloAula}
+                  onChange={(e) => setTituloAula(e.target.value)}
+                  required
+                />
+              </div>
               <CampoArea
-                rotulo="Descrição (opcional)"
+                rotulo="Resumo da aula"
                 name="aula-descricao"
                 value={descricaoAula}
                 onChange={(e) => setDescricaoAula(e.target.value)}
                 maxLength={2000}
                 className="min-h-16"
               />
+              <CampoArea
+                rotulo="Conteúdo da apostila"
+                name="aula-conteudo"
+                value={conteudoAula}
+                onChange={(e) => setConteudoAula(e.target.value)}
+                maxLength={20000}
+                placeholder="Escreva o texto completo da aula. Use linhas em branco para separar seções."
+                className="min-h-48 font-mono text-sm leading-6"
+              />
+              <div className="grid gap-3 lg:grid-cols-2">
+                <Campo
+                  rotulo="Link de vídeo ou referência"
+                  name="aula-video"
+                  value={videoReferencia}
+                  onChange={(e) => setVideoReferencia(e.target.value)}
+                />
+                <Campo
+                  rotulo="Link de material complementar"
+                  name="aula-material"
+                  value={materialAulaUrl}
+                  onChange={(e) => setMaterialAulaUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Imagem da aula</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Use PNG/JPG leve para ilustrar a apostila.
+                    </p>
+                  </div>
+                  <input
+                    accept="image/*"
+                    className="text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-700"
+                    onChange={(e) => selecionarImagemAula(e.target.files?.[0] ?? null)}
+                    type="file"
+                  />
+                </div>
+                {imagemAulaUrl ? (
+                  <img
+                    alt="Prévia da imagem da aula"
+                    className="mt-4 max-h-56 w-full rounded-lg object-cover"
+                    src={imagemAulaUrl}
+                  />
+                ) : null}
+              </div>
               <Botao
                 type="submit"
-                variante="secundario"
+                variante="primario"
                 larguraTotal
                 carregando={salvandoAula}
                 disabled={!cursoId || !moduloAulaId}
@@ -215,6 +305,23 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
                           {aula.descricao && (
                             <p className="mt-0.5 text-xs text-slate-500">{aula.descricao}</p>
                           )}
+                          <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-medium">
+                            {aula.conteudo ? (
+                              <span className="rounded-full bg-teal-50 px-2 py-0.5 text-teal-700">
+                                Apostila
+                              </span>
+                            ) : null}
+                            {aula.imagemUrl ? (
+                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
+                                Imagem
+                              </span>
+                            ) : null}
+                            {aula.materialUrl ? (
+                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">
+                                Material
+                              </span>
+                            ) : null}
+                          </div>
                         </li>
                       ))}
                     </ol>

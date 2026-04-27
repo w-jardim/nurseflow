@@ -275,10 +275,32 @@ export function PaginaAlunoCursos() {
                                         {aula.descricao}
                                       </span>
                                     ) : null}
+                                    {aula.imagemUrl ? (
+                                      <img
+                                        alt={`Imagem da aula ${aula.titulo}`}
+                                        className="mt-3 max-h-80 w-full rounded-lg border border-slate-100 object-cover"
+                                        src={aula.imagemUrl}
+                                      />
+                                    ) : null}
+                                    {aula.conteudo ? (
+                                      <span className="mt-3 block whitespace-pre-wrap rounded-lg bg-white/70 p-3 text-sm leading-6 text-slate-700">
+                                        {aula.conteudo}
+                                      </span>
+                                    ) : null}
                                     {aula.videoReferencia ? (
                                       <span className="mt-2 block break-all text-xs font-medium text-primario">
                                         Vídeo: {aula.videoReferencia}
                                       </span>
+                                    ) : null}
+                                    {aula.materialUrl ? (
+                                      <a
+                                        className="mt-2 inline-flex text-xs font-semibold text-destaque hover:underline"
+                                        href={aula.materialUrl}
+                                        rel="noreferrer"
+                                        target="_blank"
+                                      >
+                                        Abrir material complementar
+                                      </a>
                                     ) : null}
                                   </span>
                                 </label>
