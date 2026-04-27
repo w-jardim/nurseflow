@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Campo, CampoArea, CampoSelect } from './ui/Campo';
 import { Botao } from './ui/Botao';
+import { EditorRico } from './ui/EditorRico';
 import { EstadoVazio } from './ui/EstadoVazio';
 import { useToast } from '../contextos/ToastContexto';
 import { requisitarApi } from '../servicos/api';
@@ -203,14 +204,11 @@ export function PainelConteudoCurso({ cursos }: PainelConteudoCursoProps) {
                 maxLength={2000}
                 className="min-h-16"
               />
-              <CampoArea
+              <EditorRico
                 rotulo="Conteúdo da apostila"
-                name="aula-conteudo"
-                value={conteudoAula}
-                onChange={(e) => setConteudoAula(e.target.value)}
-                maxLength={20000}
-                placeholder="Escreva o texto completo da aula. Use linhas em branco para separar seções."
-                className="min-h-48 font-mono text-sm leading-6"
+                valor={conteudoAula}
+                onChange={setConteudoAula}
+                ajuda="Negrito, itálico, títulos, listas e links"
               />
               <div className="grid gap-3 lg:grid-cols-2">
                 <Campo

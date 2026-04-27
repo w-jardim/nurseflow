@@ -3,6 +3,7 @@ import { Badge } from '../../componentes/ui/Badge';
 import { EstadoVazio } from '../../componentes/ui/EstadoVazio';
 import { requisitarApi } from '../../servicos/api';
 import type { AulaCurso, CursoAluno, CursoAlunoDetalhe, ProgressoAula } from '../../tipos/cursos';
+import { sanitizarHtmlBasico } from '../../utilitarios/html';
 import { formatarReais } from '../../utilitarios/moeda';
 
 function aulasDoCurso(curso: CursoAlunoDetalhe | null) {
@@ -283,9 +284,12 @@ export function PaginaAlunoCursos() {
                                       />
                                     ) : null}
                                     {aula.conteudo ? (
-                                      <span className="mt-3 block whitespace-pre-wrap rounded-lg bg-white/70 p-3 text-sm leading-6 text-slate-700">
-                                        {aula.conteudo}
-                                      </span>
+                                      <span
+                                        className="mt-3 block rounded-lg bg-white/70 p-3 text-sm leading-7 text-slate-700 [&_a]:font-semibold [&_a]:text-destaque [&_h2]:mb-2 [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:text-base [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-2 [&_strong]:font-bold [&_ul]:list-disc"
+                                        dangerouslySetInnerHTML={{
+                                          __html: sanitizarHtmlBasico(aula.conteudo),
+                                        }}
+                                      />
                                     ) : null}
                                     {aula.videoReferencia ? (
                                       <span className="mt-2 block break-all text-xs font-medium text-primario">
