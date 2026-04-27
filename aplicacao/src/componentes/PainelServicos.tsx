@@ -218,6 +218,8 @@ export function PainelServicos({ servicos, aoCriar, aoAtualizar, aoExcluir }: Pa
                 placeholder="0,00"
                 inputMode="numeric"
                 value={preco}
+                ajuda="Digite apenas números. Ex.: 20000 vira 200,00."
+                onFocus={(evento) => evento.currentTarget.select()}
                 onChange={(evento) => setPreco(mascararReais(evento.target.value))}
                 required
               />
