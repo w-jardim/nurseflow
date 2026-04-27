@@ -20,6 +20,11 @@ export class WebhookControlador {
     @Headers('x-request-id') requestId: string,
   ) {
     const segredo = this.config.get<string>('MERCADO_PAGO_WEBHOOK_SECRET');
+    const emProducao = this.config.get<string>('NODE_ENV') === 'production';
+
+    if (emProducao && !segredo) {
+      throw new UnauthorizedException('Webhook rejeitado: MERCADO_PAGO_WEBHOOK_SECRET não configurado.');
+    }
 
     if (segredo && assinatura) {
       this.validarAssinatura(body, assinatura, requestId, segredo);
