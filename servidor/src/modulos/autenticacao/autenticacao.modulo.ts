@@ -12,12 +12,16 @@ import { JwtEstrategia } from './estrategias/jwt.estrategia';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configuracao: ConfigService) => ({
-        secret: configuracao.get<string>('JWT_SEGREDO', 'segredo-local-dev'),
-        signOptions: {
-          expiresIn: '15m',
-        },
-      }),
+      useFactory: (configuracao: ConfigService) => {
+        const segredo = configuracao.get<string>('JWT_SEGREDO');
+        if (!segredo && configuracao.get('NODE_ENV') === 'production') {
+          throw new Error('JWT_SEGREDO é obrigatório em produção.');
+        }
+        return {
+          secret: segredo ?? 'segredo-local-dev',
+          signOptions: { expiresIn: '15m' },
+        };
+      },
     }),
   ],
   controllers: [AutenticacaoControlador],
