@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { requisitarApi } from '../servicos/api';
-import { buscarToken, limparToken } from '../servicos/sessao';
+import { buscarRefreshToken, buscarToken, limparSessao } from '../servicos/sessao';
 import type { Usuario } from '../tipos/autenticacao';
 import type { PerfilProfissional } from '../tipos/profissionais';
 
@@ -39,7 +39,7 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
           setPerfil(p);
         }
       } catch {
-        limparToken();
+        limparSessao();
         navegar('/autenticacao/login');
       } finally {
         setCarregando(false);
@@ -48,9 +48,33 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     void init();
   }, [navegar]);
 
-  function sair() {
-    limparToken();
-    navegar('/autenticacao/login');
+  async function sair() {
+    const refreshToken = buscarRefreshToken();
+
+    try {
+      if (refreshToken) {
+        await requisitarApi<{ sucesso: true }>('/autenticacao/sair', {
+          metodo: 'POST',
+          corpo: { refreshToken },
+          ignorarRefreshAutomatico: true,
+        });
+      }
+    } catch {
+      // O frontend sempre encerra a sessão local, mesmo se o backend falhar.
+    } finally {
+      limparSessao();
+      setUsuario(null);
+      setPerfil(null);
+      navegar('/autenticacao/login');
+    }
+  }
+
+  if (!buscarToken()) {
+    return (
+      <Contexto.Provider value={{ usuario, perfil, atualizarPerfil: setPerfil, sair, carregando }}>
+        {children}
+      </Contexto.Provider>
+    );
   }
 
   return (

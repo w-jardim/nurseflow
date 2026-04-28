@@ -13,6 +13,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
+    "test": "npm --workspace servidor run test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "prisma:generate": "npm --workspace servidor run prisma:generate",
     "prisma:migrate": "npm --workspace servidor run prisma:migrate"

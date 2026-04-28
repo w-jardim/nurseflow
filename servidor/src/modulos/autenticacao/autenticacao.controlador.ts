@@ -6,6 +6,8 @@ import type { UsuarioAutenticado } from '../../comum/tipos/requisicao-autenticad
 import { AutenticacaoServico } from './autenticacao.servico';
 import { CadastroProfissionalDto } from './dto/cadastro-profissional.dto';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SairDto } from './dto/sair.dto';
 
 @Controller('autenticacao')
 export class AutenticacaoControlador {
@@ -21,6 +23,17 @@ export class AutenticacaoControlador {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   entrar(@Body() dados: LoginDto) {
     return this.autenticacaoServico.entrar(dados);
+  }
+
+  @Post('refresh')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  renovarSessao(@Body() dados: RefreshTokenDto) {
+    return this.autenticacaoServico.renovarSessao(dados);
+  }
+
+  @Post('sair')
+  sair(@Body() dados: SairDto) {
+    return this.autenticacaoServico.sair(dados);
   }
 
   @Get('me')
