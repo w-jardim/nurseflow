@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Campo } from '../componentes/ui/Campo';
 import { Botao } from '../componentes/ui/Botao';
 import { requisitarApi } from '../servicos/api';
-import { salvarToken } from '../servicos/sessao';
+import { salvarSessao } from '../servicos/sessao';
 import type { RespostaAutenticacao } from '../tipos/autenticacao';
 
 export function PaginaCadastro() {
@@ -26,7 +26,7 @@ export function PaginaCadastro() {
         corpo: { nome, email, senha, slug },
       });
 
-      salvarToken(resposta.acesso.token);
+      salvarSessao(resposta);
       navegar('/painel');
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Não foi possível criar sua conta.');

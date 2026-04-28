@@ -1,5 +1,6 @@
 import { configuracao } from '../configuracao';
-import { buscarToken } from './sessao';
+import type { RespostaAutenticacao } from '../tipos/autenticacao';
+import { buscarRefreshToken, buscarToken, limparSessao, salvarSessao } from './sessao';
 
 type MetodoHttp = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -7,11 +8,24 @@ type OpcoesRequisicao = {
   metodo?: MetodoHttp;
   corpo?: unknown;
   autenticada?: boolean;
+  ignorarRefreshAutomatico?: boolean;
 };
 
 export async function requisitarApi<TResposta>(
   caminho: string,
-  { metodo = 'GET', corpo, autenticada = false }: OpcoesRequisicao = {},
+  { metodo = 'GET', corpo, autenticada = false, ignorarRefreshAutomatico = false }: OpcoesRequisicao = {},
+): Promise<TResposta> {
+  return executarRequisicao<TResposta>(caminho, {
+    metodo,
+    corpo,
+    autenticada,
+    ignorarRefreshAutomatico,
+  });
+}
+
+async function executarRequisicao<TResposta>(
+  caminho: string,
+  { metodo, corpo, autenticada, ignorarRefreshAutomatico }: Required<OpcoesRequisicao>,
 ): Promise<TResposta> {
   const cabecalhos: HeadersInit = {
     'Content-Type': 'application/json',
@@ -31,6 +45,19 @@ export async function requisitarApi<TResposta>(
     body: corpo ? JSON.stringify(corpo) : undefined,
   });
 
+  if (resposta.status === 401 && autenticada && !ignorarRefreshAutomatico) {
+    const renovou = await tentarRenovarSessao();
+
+    if (renovou) {
+      return executarRequisicao<TResposta>(caminho, {
+        metodo,
+        corpo,
+        autenticada,
+        ignorarRefreshAutomatico: true,
+      });
+    }
+  }
+
   const conteudo = await resposta.json().catch(() => null);
 
   if (!resposta.ok) {
@@ -40,4 +67,28 @@ export async function requisitarApi<TResposta>(
   }
 
   return conteudo as TResposta;
+}
+
+async function tentarRenovarSessao() {
+  const refreshToken = buscarRefreshToken();
+
+  if (!refreshToken) {
+    limparSessao();
+    return false;
+  }
+
+  try {
+    const resposta = await executarRequisicao<RespostaAutenticacao>('/autenticacao/refresh', {
+      metodo: 'POST',
+      corpo: { refreshToken },
+      autenticada: false,
+      ignorarRefreshAutomatico: true,
+    });
+
+    salvarSessao(resposta);
+    return true;
+  } catch {
+    limparSessao();
+    return false;
+  }
 }

@@ -24,4 +24,8 @@ export type RespostaAutenticacao = {
     tipo: 'Bearer';
     expiraEmSegundos: number;
   };
+  refreshToken: {
+    token: string;
+    expiraEmSegundos: number;
+  };
 };

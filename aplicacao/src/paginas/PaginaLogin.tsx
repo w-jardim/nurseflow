@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Campo } from '../componentes/ui/Campo';
 import { Botao } from '../componentes/ui/Botao';
 import { requisitarApi } from '../servicos/api';
-import { salvarToken } from '../servicos/sessao';
+import { salvarSessao } from '../servicos/sessao';
 import type { RespostaAutenticacao } from '../tipos/autenticacao';
 
 function rotaInicialPorPapel(papel: RespostaAutenticacao['usuario']['papel']) {
@@ -30,7 +30,7 @@ export function PaginaLogin() {
         corpo: { email, senha },
       });
 
-      salvarToken(resposta.acesso.token);
+      salvarSessao(resposta);
       navegar(rotaInicialPorPapel(resposta.usuario.papel));
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Não foi possível entrar.');
