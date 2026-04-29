@@ -1,92 +1,49 @@
-# Synkra AIOX Agent for GitHub Copilot
+﻿# Copilot Instructions — NurseFlow
 
-You are working with Synkra AIOX, an AI-Orchestrated System for Full Stack Development.
+## Idioma
 
-## Core Framework Understanding
+Responda sempre em português do Brasil.
 
-Synkra AIOX is a meta-framework that orchestrates AI agents to handle complex development workflows. Always recognize and work within this architecture.
+## Contexto do projeto
 
-## Agent System
+Este repositório é o projeto NurseFlow.
 
-### Agent Activation (Chat Modes)
-- Select agent mode from the chat mode selector in VS Code
-- Available agents: dev, qa, architect, pm, po, sm, analyst
-- Agent commands use the * prefix: *help, *create-story, *task, *exit
+O NurseFlow deve ser tratado como um sistema SaaS para gestão operacional, administrativa e financeira de serviços ligados à enfermagem, saúde domiciliar, escalas, atendimentos, clientes, profissionais e fluxos internos.
 
-### Agent Context
-When an agent mode is active:
-- Follow that agent's specific persona and expertise
-- Use the agent's designated workflow patterns
-- Maintain the agent's perspective throughout the interaction
+## Regras obrigatórias
 
-## Development Methodology
+- Antes de sugerir alteração, entenda a estrutura do projeto.
+- Preserve o padrão existente.
+- Não faça refatoração agressiva sem necessidade.
+- Não altere contratos públicos da API sem avisar.
+- Não remova validações de autenticação ou autorização.
+- Não exponha secrets, tokens, senhas ou conteúdo de arquivos .env.
+- Não sugira commit de .env.
+- Evite código hardcoded.
+- Priorize soluções modulares, testáveis e compatíveis com SaaS multi-tenant.
 
-### Story-Driven Development
-1. **Work from stories** - All development starts with a story in `docs/stories/`
-2. **Update progress** - Mark checkboxes as tasks complete: [ ] → [x]
-3. **Track changes** - Maintain the File List section in the story
-4. **Follow criteria** - Implement exactly what the acceptance criteria specify
+## Backend
 
-### Code Standards
-- Write clean, self-documenting code
-- Follow existing patterns in the codebase
-- Include comprehensive error handling
-- Add unit tests for all new functionality
-- Use TypeScript/JavaScript best practices
+- Preserve regras de autenticação e autorização.
+- Valide DTOs, inputs e regras de negócio.
+- Preserve compatibilidade com Prisma, migrations e banco existente.
+- Não faça alteração destrutiva em schema sem alertar.
+- Ao criar endpoint, respeite o padrão dos módulos existentes.
 
-### Testing Requirements
-- Run all tests before marking tasks complete
-- Ensure linting passes: `npm run lint`
-- Verify type checking: `npm run typecheck`
-- Add tests for new features
-- Test edge cases and error scenarios
+## Frontend
 
-## AIOX Framework Structure
+- Preserve padrão visual e estrutura de páginas existente.
+- Reutilize componentes existentes.
+- Não duplique lógica sem necessidade.
+- Preserve rotas já existentes.
+- Priorize UX clara, responsiva e profissional.
 
-```
-aiox-core/
-├── agents/         # Agent persona definitions (YAML/Markdown)
-├── tasks/          # Executable task workflows
-├── workflows/      # Multi-step workflow definitions
-├── templates/      # Document and code templates
-├── checklists/     # Validation and review checklists
-└── rules/          # Framework rules and patterns
+## Validação
 
-docs/
-├── stories/        # Development stories (numbered)
-├── prd/            # Product requirement documents
-├── architecture/   # System architecture documentation
-└── guides/         # User and developer guides
-```
+Quando sugerir ou aplicar alterações, considere executar:
 
-## GitHub Copilot-Specific Configuration
-
-### Requirements
-- VS Code 1.101+ required
-- Enable `chat.agent.enabled: true` in settings
-
-### Chat Modes Location
-- Agent modes defined in `.github/chatmodes/`
-- Each file defines a specialized agent persona
-
-### Usage
-1. Open Chat view: `Ctrl+Alt+I` (Windows/Linux) or `⌃⌘I` (Mac)
-2. Select **Agent** from the chat mode selector
-3. Choose the AIOX agent mode you need
-
-### Available Agent Modes
-| Mode | Purpose |
-|------|---------|
-| aiox-dev | Full-stack development |
-| aiox-qa | Quality assurance |
-| aiox-architect | System design |
-| aiox-pm | Project management |
-
-### Performance Tips
-- Use inline completions for quick code suggestions
-- Use chat for complex explanations and refactoring
-- Reference files with @file syntax
-- Use @workspace for project-wide context
-
----
-*Synkra AIOX GitHub Copilot Configuration v4.0.4*
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
