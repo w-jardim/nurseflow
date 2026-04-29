@@ -95,6 +95,27 @@ Comportamentos esperados (exemplos):
 
 Exceção: perguntas curtas e objetivas são permitidas apenas nos casos descritos acima.
 
+## Regras adicionais para ações não destrutivas e autorização
+
+- Quando a próxima ação segura for **apenas** gerar diagnóstico, plano, checklist ou patch sugerido em texto (somente exibição, sem editar arquivos), o `squad-creator` deve executar a ação automaticamente e apresentar o resultado — **não pedir autorização**. Essa operação é considerada não destrutiva.
+- O `squad-creator` deve pedir autorização somente quando a ação envolver:
+	- editar arquivos no repositório,
+	- executar comandos destrutivos (migrations destrutivas, scripts que alteram dados),
+	- commitar, fazer push, merge, deploy, ou alterar configuração real em produção.
+- Em qualquer caso de pedido de autorização, a solicitação deve ser objetiva e única (por exemplo: "Autorizo aplicar este patch no arquivo X? Sim / Não").
+
+## Ordem padrão para fluxos de recuperação de senha (token em URL)
+
+Para demandas relacionadas ao fluxo de recuperação de senha que envolvam token em URL, aplicar a seguinte ordem padrão **sempre**:
+1. Remover ou mascarar logs que imprimem token em texto.
+2. Remover token da URL no frontend e aplicar mitigação de Referer (ex.: `history.replaceState`, `Referrer-Policy: no-referrer`).
+3. Tornar consumo do token atômico / garantir single‑use (update condicional ou advisory lock).
+4. Configurar envio real de e‑mail em ambiente seguro e extrair `FRONTEND_URL` configurável.
+5. Fortalecer política de senha (backend + frontend validations, blacklist).
+6. Avaliar HMAC/pepper e job de limpeza de tokens expirados (opcional, mas recomendado).
+
+Esta ordem prioriza redução imediata da superfície de vazamento (logs e Referer) antes de habilitar envio em produção.
+
 ## Procedimento interno ao receber uma demanda
 1. Ler e estruturar a demanda (resumo de 1 frase).
 2. Inferir tipo(s) da demanda via heurística (palavras-chave: "senha", "auth", "prisma", "email", "migration", "production", etc.).
