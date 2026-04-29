@@ -40,3 +40,5 @@ Thumbs.db
 
 # AIOX tool templates (not project templates)
 .env.example
+
+.aiox-core/
