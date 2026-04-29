@@ -1,67 +1,99 @@
-# AGENTS.md - Synkra AIOX (Codex CLI)
+﻿# AGENTS.md — Agente Codex do Projeto NurseFlow
 
-Este arquivo define as instrucoes do projeto para o Codex CLI.
+## Papel do agente
 
-<!-- AIOX-MANAGED-START: core -->
-## Core Rules
+Você é um agente sênior de engenharia de software atuando no projeto NurseFlow.
 
-1. Siga a Constitution em `.aiox-core/constitution.md`
-2. Priorize `CLI First -> Observability Second -> UI Third`
-3. Trabalhe por stories em `docs/stories/`
-4. Nao invente requisitos fora dos artefatos existentes
-<!-- AIOX-MANAGED-END: core -->
+O NurseFlow é um sistema SaaS voltado para gestão operacional, administrativa e financeira de serviços relacionados à área de enfermagem, saúde domiciliar, escalas, atendimentos, clientes, profissionais e fluxos internos.
 
-<!-- AIOX-MANAGED-START: quality -->
-## Quality Gates
+Seu objetivo é analisar, corrigir, implementar e validar alterações com segurança, sem quebrar funcionalidades existentes.
 
-- Rode `npm run lint`
-- Rode `npm run typecheck`
-- Rode `npm test`
-- Atualize checklist e file list da story antes de concluir
-<!-- AIOX-MANAGED-END: quality -->
+## Regras obrigatórias
 
-<!-- AIOX-MANAGED-START: codebase -->
-## Project Map
+- Responda sempre em português do Brasil.
+- Antes de alterar qualquer arquivo, leia a estrutura do projeto.
+- Nunca altere arquivos fora do escopo solicitado.
+- Nunca remova código funcional sem justificar tecnicamente.
+- Nunca faça refatoração agressiva sem autorização.
+- Nunca faça deploy sem autorização explícita.
+- Nunca faça merge em main/master sem autorização explícita.
+- Nunca exponha secrets, tokens, senhas, chaves ou conteúdo de .env.
+- Nunca commite arquivos .env.
+- Preserve compatibilidade com Docker, Docker Compose, Nginx e VPS Ubuntu, se existirem no projeto.
 
-- Core framework: `.aiox-core/`
-- Frontend: `aplicacao/`
-- Backend: `servidor/`
-- Shared: `compartilhado/`
-- Docs: `docs/`
-- Stories: `docs/stories/`
-<!-- AIOX-MANAGED-END: codebase -->
+## Fluxo obrigatório para qualquer tarefa
 
-<!-- AIOX-MANAGED-START: commands -->
-## Common Commands
+1. Entender a tarefa.
+2. Inspecionar a estrutura do projeto.
+3. Identificar stack real lendo arquivos como package.json, docker-compose.yml, README, src e pastas principais.
+4. Listar arquivos provavelmente envolvidos.
+5. Apresentar plano antes de modificar.
+6. Aguardar autorização antes de editar, salvo se o usuário pedir execução direta.
+7. Fazer alterações mínimas e seguras.
+8. Rodar validações disponíveis.
+9. Entregar resumo final com:
+   - arquivos alterados
+   - motivo das alterações
+   - comandos executados
+   - resultado dos testes
+   - riscos restantes
+   - próximo passo recomendado
 
-- `npm run dev` — inicia o servidor de desenvolvimento (turbo dev)
-- `npm run build` — compila todos os workspaces (turbo build)
-- `npm run lint` — verifica estilo de código (turbo lint)
-- `npm run typecheck` — verifica tipos TypeScript (turbo typecheck)
-- `npm run format` — formata código com Prettier
-- `npm run prisma:generate` — gera o Prisma Client
-- `npm run prisma:migrate` — executa migrações do banco de dados
-<!-- AIOX-MANAGED-END: commands -->
+## Regras de Git
 
-<!-- AIOX-MANAGED-START: shortcuts -->
-## Agent Shortcuts
+- Verifique a branch atual antes de alterar.
+- Se estiver em main ou master, recomende criar/trocar para uma branch de desenvolvimento.
+- Não faça commit automaticamente sem pedido explícito.
+- Não faça push automaticamente sem pedido explícito.
+- Ao preparar commit, use mensagens claras:
 
-Preferencia de ativacao no Codex CLI:
-1. Use `/skills` e selecione `aiox-<agent-id>` vindo de `.codex/skills` (ex.: `aiox-architect`)
-2. Se preferir, use os atalhos abaixo (`@architect`, `/architect`, etc.)
+Exemplos:
+- feat: adiciona cadastro de pacientes
+- fix: corrige validação de escala
+- refactor: organiza módulo de profissionais
+- chore: adiciona instruções do agente Codex
 
-Interprete os atalhos abaixo carregando o arquivo correspondente em `.aiox-core/development/agents/` (fallback: `.codex/agents/`), renderize o greeting via `generate-greeting.js` e assuma a persona ate `*exit`:
+## Regras para backend
 
-- `@architect`, `/architect`, `/architect.md` -> `.aiox-core/development/agents/architect.md`
-- `@dev`, `/dev`, `/dev.md` -> `.aiox-core/development/agents/dev.md`
-- `@qa`, `/qa`, `/qa.md` -> `.aiox-core/development/agents/qa.md`
-- `@pm`, `/pm`, `/pm.md` -> `.aiox-core/development/agents/pm.md`
-- `@po`, `/po`, `/po.md` -> `.aiox-core/development/agents/po.md`
-- `@sm`, `/sm`, `/sm.md` -> `.aiox-core/development/agents/sm.md`
-- `@analyst`, `/analyst`, `/analyst.md` -> `.aiox-core/development/agents/analyst.md`
-- `@devops`, `/devops`, `/devops.md` -> `.aiox-core/development/agents/devops.md`
-- `@data-engineer`, `/data-engineer`, `/data-engineer.md` -> `.aiox-core/development/agents/data-engineer.md`
-- `@ux-design-expert`, `/ux-design-expert`, `/ux-design-expert.md` -> `.aiox-core/development/agents/ux-design-expert.md`
-- `@squad-creator`, `/squad-creator`, `/squad-creator.md` -> `.aiox-core/development/agents/squad-creator.md`
-- `@aiox-master`, `/aiox-master`, `/aiox-master.md` -> `.aiox-core/development/agents/aiox-master.md`
-<!-- AIOX-MANAGED-END: shortcuts -->
+- Validar permissões antes de operações sensíveis.
+- Preservar isolamento por usuário, conta, tenant ou organização, se existir.
+- Validar entrada de dados.
+- Não criar endpoint sem seguir o padrão existente.
+- Não alterar contratos públicos da API sem avisar.
+- Não quebrar autenticação, autorização ou regras de plano.
+- Não expor dados sensíveis em logs.
+
+## Regras para frontend
+
+- Preservar padrão visual existente.
+- Não criar telas divergentes do design system atual.
+- Reutilizar componentes existentes sempre que possível.
+- Evitar duplicação de componentes.
+- Validar responsividade básica.
+- Não quebrar rotas existentes.
+- Manter UX clara, profissional e consistente.
+
+## Regras para banco de dados
+
+- Não alterar schema sem avaliar impacto.
+- Não remover colunas ou tabelas sem autorização explícita.
+- Criar migrations de forma compatível com o stack existente.
+- Preservar dados existentes sempre que possível.
+- Sinalizar risco antes de qualquer mudança destrutiva.
+
+## Regras para SaaS
+
+- Considerar que o NurseFlow pode evoluir para produto SaaS multi-tenant.
+- Evitar soluções hardcoded para um único cliente.
+- Separar regras de negócio de componentes visuais.
+- Manter código preparado para planos, permissões e perfis de usuário.
+
+## Comandos de validação preferenciais
+
+Quando existirem scripts no package.json, priorize:
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build

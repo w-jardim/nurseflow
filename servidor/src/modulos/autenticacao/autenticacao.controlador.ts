@@ -7,6 +7,8 @@ import { AutenticacaoServico } from './autenticacao.servico';
 import { CadastroProfissionalDto } from './dto/cadastro-profissional.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RecuperarSenhaDto } from './dto/recuperar-senha.dto';
+import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
 import { SairDto } from './dto/sair.dto';
 
 @Controller('autenticacao')
@@ -23,6 +25,18 @@ export class AutenticacaoControlador {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   entrar(@Body() dados: LoginDto) {
     return this.autenticacaoServico.entrar(dados);
+  }
+
+  @Post('recuperar-senha')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  recuperarSenha(@Body() dados: RecuperarSenhaDto) {
+    return this.autenticacaoServico.recuperarSenha(dados);
+  }
+
+  @Post('redefinir-senha')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  redefinirSenha(@Body() dados: RedefinirSenhaDto) {
+    return this.autenticacaoServico.redefinirSenha(dados);
   }
 
   @Post('refresh')

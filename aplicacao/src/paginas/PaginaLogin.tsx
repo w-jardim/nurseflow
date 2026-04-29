@@ -67,6 +67,15 @@ export function PaginaLogin() {
         required
       />
 
+      <div className="flex justify-end">
+        <Link
+          className="text-sm font-semibold text-primario transition hover:text-primario-800"
+          to="/autenticacao/recuperar-senha"
+        >
+          Esqueci minha senha
+        </Link>
+      </div>
+
       {erro && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
           <p className="text-sm text-red-700">{erro}</p>

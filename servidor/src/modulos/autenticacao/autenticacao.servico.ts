@@ -8,10 +8,13 @@ import type { UsuarioAutenticado } from '../../comum/tipos/requisicao-autenticad
 import { CadastroProfissionalDto } from './dto/cadastro-profissional.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RecuperarSenhaDto } from './dto/recuperar-senha.dto';
+import { RedefinirSenhaDto } from './dto/redefinir-senha.dto';
 import { SairDto } from './dto/sair.dto';
 
 const TOKEN_ACESSO_EXPIRA_EM_SEGUNDOS = 900;
 const REFRESH_TOKEN_EXPIRA_EM_SEGUNDOS = 2_592_000;
+const TOKEN_RECUPERACAO_SENHA_EXPIRA_EM_SEGUNDOS = 3_600;
 
 const CAMPOS_USUARIO_SEGURO = {
   id: true,
@@ -39,6 +42,12 @@ type RefreshTokenResposta = {
 };
 
 type RefreshTokenGerado = RefreshTokenResposta & {
+  tokenHash: string;
+  expiraEm: Date;
+};
+
+type TokenRecuperacaoSenhaGerado = {
+  token: string;
   tokenHash: string;
   expiraEm: Date;
 };
@@ -241,6 +250,116 @@ export class AutenticacaoServico {
     };
   }
 
+  async recuperarSenha(dados: RecuperarSenhaDto) {
+    const email = dados.email.trim().toLowerCase();
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { email },
+    });
+
+    if (!usuario || !usuario.ativo) {
+      return {
+        sucesso: true as const,
+      };
+    }
+
+    const tokenRecuperacao = this.gerarTokenRecuperacaoSenha();
+
+    await this.prisma.$transaction(async (transacao) => {
+      await transacao.tokenRecuperacaoSenha.updateMany({
+        where: {
+          usuarioId: usuario.id,
+          usadoEm: null,
+          revogadoEm: null,
+          expiraEm: {
+            gt: new Date(),
+          },
+        },
+        data: {
+          revogadoEm: new Date(),
+        },
+      });
+
+      await transacao.tokenRecuperacaoSenha.create({
+        data: {
+          usuarioId: usuario.id,
+          tokenHash: tokenRecuperacao.tokenHash,
+          expiraEm: tokenRecuperacao.expiraEm,
+        },
+      });
+    });
+
+    this.registrarTokenRecuperacaoSenhaParaDesenvolvimento(email, tokenRecuperacao.token);
+
+    return {
+      sucesso: true as const,
+    };
+  }
+
+  async redefinirSenha(dados: RedefinirSenhaDto) {
+    const tokenHash = this.gerarHashRefreshToken(dados.token);
+    const senhaHash = await bcrypt.hash(dados.novaSenha, 12);
+
+    await this.prisma.$transaction(async (transacao) => {
+      const tokenRecuperacao = await transacao.tokenRecuperacaoSenha.findUnique({
+        where: { tokenHash },
+      });
+
+      if (
+        !tokenRecuperacao ||
+        tokenRecuperacao.expiraEm <= new Date() ||
+        tokenRecuperacao.usadoEm ||
+        tokenRecuperacao.revogadoEm
+      ) {
+        throw new UnauthorizedException('Token inválido ou expirado.');
+      }
+
+      await transacao.usuario.update({
+        where: { id: tokenRecuperacao.usuarioId },
+        data: {
+          senhaHash,
+        },
+      });
+
+      await transacao.tokenRecuperacaoSenha.update({
+        where: { id: tokenRecuperacao.id },
+        data: {
+          usadoEm: new Date(),
+        },
+      });
+
+      await transacao.tokenRecuperacaoSenha.updateMany({
+        where: {
+          usuarioId: tokenRecuperacao.usuarioId,
+          id: {
+            not: tokenRecuperacao.id,
+          },
+          usadoEm: null,
+          revogadoEm: null,
+          expiraEm: {
+            gt: new Date(),
+          },
+        },
+        data: {
+          revogadoEm: new Date(),
+        },
+      });
+
+      await transacao.refreshToken.updateMany({
+        where: {
+          usuarioId: tokenRecuperacao.usuarioId,
+          revogadoEm: null,
+        },
+        data: {
+          revogadoEm: new Date(),
+        },
+      });
+    });
+
+    return {
+      sucesso: true as const,
+    };
+  }
+
   private montarRespostaAutenticacao(
     usuario: UsuarioSeguro,
     refreshToken: RefreshTokenGerado,
@@ -276,7 +395,7 @@ export class AutenticacaoServico {
   }
 
   private gerarRefreshToken(): RefreshTokenGerado {
-    const token = this.gerarRefreshTokenAleatorioSeguro();
+    const token = this.gerarTokenAleatorioSeguro();
     const tokenHash = this.gerarHashRefreshToken(token);
     const expiraEm = this.calcularExpiracaoRefreshToken();
 
@@ -288,7 +407,19 @@ export class AutenticacaoServico {
     };
   }
 
-  private gerarRefreshTokenAleatorioSeguro(): string {
+  private gerarTokenRecuperacaoSenha(): TokenRecuperacaoSenhaGerado {
+    const token = this.gerarTokenAleatorioSeguro();
+    const tokenHash = this.gerarHashRefreshToken(token);
+    const expiraEm = this.calcularExpiracaoTokenRecuperacaoSenha();
+
+    return {
+      token,
+      tokenHash,
+      expiraEm,
+    };
+  }
+
+  private gerarTokenAleatorioSeguro(): string {
     return randomBytes(48).toString('base64url');
   }
 
@@ -298,5 +429,18 @@ export class AutenticacaoServico {
 
   private calcularExpiracaoRefreshToken(): Date {
     return new Date(Date.now() + REFRESH_TOKEN_EXPIRA_EM_SEGUNDOS * 1000);
+  }
+
+  private calcularExpiracaoTokenRecuperacaoSenha(): Date {
+    return new Date(Date.now() + TOKEN_RECUPERACAO_SENHA_EXPIRA_EM_SEGUNDOS * 1000);
+  }
+
+  private registrarTokenRecuperacaoSenhaParaDesenvolvimento(email: string, token: string) {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    const link = `http://localhost:5173/autenticacao/redefinir-senha?token=${token}`;
+    console.info(`[autenticacao] Recuperacao de senha para ${email}: ${link}`);
   }
 }

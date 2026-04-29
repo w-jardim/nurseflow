@@ -19,6 +19,13 @@ describe('AutenticacaoServico', () => {
       create: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    tokenRecuperacaoSenha: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
     },
     usuario: {
       findUnique: jest.fn(),
@@ -50,10 +57,12 @@ describe('AutenticacaoServico', () => {
     jest.mocked(bcrypt.hash).mockResolvedValue('senha-hash' as never);
     jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
     jwtServico.sign.mockReturnValue('token-jwt');
+    jest.spyOn(console, 'info').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('cadastra profissional e cria configuração inicial em transação', async () => {
@@ -390,5 +399,229 @@ describe('AutenticacaoServico', () => {
     ).resolves.toEqual({ sucesso: true });
 
     expect(prismaServico.refreshToken.update).not.toHaveBeenCalled();
+  });
+
+  it('retorna sucesso neutro ao recuperar senha com email inexistente', async () => {
+    prismaServico.usuario.findUnique.mockResolvedValue(null);
+
+    await expect(
+      servico.recuperarSenha({
+        email: 'inexistente@example.com',
+      }),
+    ).resolves.toEqual({ sucesso: true });
+
+    expect(prismaServico.$transaction).not.toHaveBeenCalled();
+    expect(console.info).not.toHaveBeenCalled();
+  });
+
+  it('gera token de recuperacao, revoga anteriores ativos e registra link em desenvolvimento', async () => {
+    const transacao = {
+      tokenRecuperacaoSenha: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        create: jest.fn().mockResolvedValue({ id: 'token-recuperacao-id' }),
+      },
+    };
+    prismaServico.usuario.findUnique.mockResolvedValue({
+      ...usuarioSeguro,
+      senhaHash: 'senha-hash',
+    });
+    prismaServico.$transaction.mockImplementation((callback) => callback(transacao));
+
+    await expect(
+      servico.recuperarSenha({
+        email: ' MONIQUE@EXAMPLE.COM ',
+      }),
+    ).resolves.toEqual({ sucesso: true });
+
+    expect(prismaServico.usuario.findUnique).toHaveBeenCalledWith({
+      where: { email: 'monique@example.com' },
+    });
+    expect(transacao.tokenRecuperacaoSenha.updateMany).toHaveBeenCalledWith({
+      where: {
+        usuarioId: usuarioSeguro.id,
+        usadoEm: null,
+        revogadoEm: null,
+        expiraEm: {
+          gt: expect.any(Date),
+        },
+      },
+      data: {
+        revogadoEm: expect.any(Date),
+      },
+    });
+    expect(transacao.tokenRecuperacaoSenha.create).toHaveBeenCalledWith({
+      data: {
+        usuarioId: usuarioSeguro.id,
+        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        expiraEm: expect.any(Date),
+      },
+    });
+    expect(console.info).toHaveBeenCalledWith(
+      expect.stringContaining('monique@example.com'),
+    );
+  });
+
+  it('redefine senha, marca token como usado, revoga outros tokens e derruba refresh tokens ativos', async () => {
+    const tokenRecuperacao = {
+      id: 'token-recuperacao-id',
+      usuarioId: usuarioSeguro.id,
+      tokenHash: 'hash-recuperacao',
+      expiraEm: new Date('2026-12-01T00:00:00.000Z'),
+      usadoEm: null,
+      revogadoEm: null,
+      criadoEm: new Date('2026-01-01T00:00:00.000Z'),
+    };
+    const transacao = {
+      tokenRecuperacaoSenha: {
+        findUnique: jest.fn().mockResolvedValue(tokenRecuperacao),
+        update: jest.fn().mockResolvedValue({ id: tokenRecuperacao.id }),
+        updateMany: jest.fn().mockResolvedValue({ count: 2 }),
+      },
+      usuario: {
+        update: jest.fn().mockResolvedValue({ id: usuarioSeguro.id }),
+      },
+      refreshToken: {
+        updateMany: jest.fn().mockResolvedValue({ count: 3 }),
+      },
+    };
+    prismaServico.$transaction.mockImplementation((callback) => callback(transacao));
+
+    await expect(
+      servico.redefinirSenha({
+        token: 'token-recuperacao-puro',
+        novaSenha: 'SenhaNova@123',
+      }),
+    ).resolves.toEqual({ sucesso: true });
+
+    expect(transacao.tokenRecuperacaoSenha.findUnique).toHaveBeenCalledWith({
+      where: {
+        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      },
+    });
+    expect(transacao.usuario.update).toHaveBeenCalledWith({
+      where: { id: usuarioSeguro.id },
+      data: {
+        senhaHash: 'senha-hash',
+      },
+    });
+    expect(transacao.tokenRecuperacaoSenha.update).toHaveBeenCalledWith({
+      where: { id: tokenRecuperacao.id },
+      data: {
+        usadoEm: expect.any(Date),
+      },
+    });
+    expect(transacao.tokenRecuperacaoSenha.updateMany).toHaveBeenCalledWith({
+      where: {
+        usuarioId: usuarioSeguro.id,
+        id: {
+          not: tokenRecuperacao.id,
+        },
+        usadoEm: null,
+        revogadoEm: null,
+        expiraEm: {
+          gt: expect.any(Date),
+        },
+      },
+      data: {
+        revogadoEm: expect.any(Date),
+      },
+    });
+    expect(transacao.refreshToken.updateMany).toHaveBeenCalledWith({
+      where: {
+        usuarioId: usuarioSeguro.id,
+        revogadoEm: null,
+      },
+      data: {
+        revogadoEm: expect.any(Date),
+      },
+    });
+  });
+
+  it('rejeita redefinicao com token inexistente', async () => {
+    const transacao = {
+      tokenRecuperacaoSenha: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+    };
+    prismaServico.$transaction.mockImplementation((callback) => callback(transacao));
+
+    await expect(
+      servico.redefinirSenha({
+        token: 'token-inexistente',
+        novaSenha: 'SenhaNova@123',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejeita redefinicao com token expirado', async () => {
+    const transacao = {
+      tokenRecuperacaoSenha: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'token-expirado-id',
+          usuarioId: usuarioSeguro.id,
+          tokenHash: 'hash-expirado',
+          expiraEm: new Date('2025-01-01T00:00:00.000Z'),
+          usadoEm: null,
+          revogadoEm: null,
+          criadoEm: new Date('2024-01-01T00:00:00.000Z'),
+        }),
+      },
+    };
+    prismaServico.$transaction.mockImplementation((callback) => callback(transacao));
+
+    await expect(
+      servico.redefinirSenha({
+        token: 'token-expirado',
+        novaSenha: 'SenhaNova@123',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejeita redefinicao com token ja usado', async () => {
+    const transacao = {
+      tokenRecuperacaoSenha: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'token-usado-id',
+          usuarioId: usuarioSeguro.id,
+          tokenHash: 'hash-usado',
+          expiraEm: new Date('2026-12-01T00:00:00.000Z'),
+          usadoEm: new Date('2026-02-01T00:00:00.000Z'),
+          revogadoEm: null,
+          criadoEm: new Date('2026-01-01T00:00:00.000Z'),
+        }),
+      },
+    };
+    prismaServico.$transaction.mockImplementation((callback) => callback(transacao));
+
+    await expect(
+      servico.redefinirSenha({
+        token: 'token-usado',
+        novaSenha: 'SenhaNova@123',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejeita redefinicao com token revogado', async () => {
+    const transacao = {
+      tokenRecuperacaoSenha: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'token-revogado-id',
+          usuarioId: usuarioSeguro.id,
+          tokenHash: 'hash-revogado',
+          expiraEm: new Date('2026-12-01T00:00:00.000Z'),
+          usadoEm: null,
+          revogadoEm: new Date('2026-02-01T00:00:00.000Z'),
+          criadoEm: new Date('2026-01-01T00:00:00.000Z'),
+        }),
+      },
+    };
+    prismaServico.$transaction.mockImplementation((callback) => callback(transacao));
+
+    await expect(
+      servico.redefinirSenha({
+        token: 'token-revogado',
+        novaSenha: 'SenhaNova@123',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
   });
 });

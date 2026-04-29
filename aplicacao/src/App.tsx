@@ -7,6 +7,8 @@ import { PaginaAdminProfissionais } from './paginas/admin/PaginaAdminProfissiona
 import { PaginaCadastro } from './paginas/PaginaCadastro';
 import { PaginaInicial } from './paginas/PaginaInicial';
 import { PaginaLogin } from './paginas/PaginaLogin';
+import { PaginaRecuperarSenha } from './paginas/PaginaRecuperarSenha';
+import { PaginaRedefinirSenha } from './paginas/PaginaRedefinirSenha';
 import { PaginaPublicaProfissional } from './paginas/PaginaPublicaProfissional';
 import { PaginaAgendamentos } from './paginas/painel/PaginaAgendamentos';
 import { PaginaAuditoria } from './paginas/painel/PaginaAuditoria';
@@ -33,6 +35,8 @@ export function App() {
       <Route element={<LayoutAutenticacao />}>
         <Route path="/autenticacao/login" element={<PaginaLogin />} />
         <Route path="/autenticacao/cadastro" element={<PaginaCadastro />} />
+        <Route path="/autenticacao/recuperar-senha" element={<PaginaRecuperarSenha />} />
+        <Route path="/autenticacao/redefinir-senha" element={<PaginaRedefinirSenha />} />
       </Route>
 
       <Route element={<LayoutPainel />}>
